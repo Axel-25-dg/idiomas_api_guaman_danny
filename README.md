@@ -1,5 +1,6 @@
 <div align="center">
 
+<!-- Logo UTE -->
 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/UTE_logo.svg/320px-UTE_logo.svg.png" alt="Universidad UTE" width="180"/>
 
 <br/>
