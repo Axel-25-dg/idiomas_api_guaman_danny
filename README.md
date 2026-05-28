@@ -1,142 +1,36 @@
-# 🌍 LanguageAPI — Backend App de Idiomas
+<div align="center">
 
-Backend completo estilo Duolingo construido con **Django + Django REST Framework**.
-Basado en la estructura del proyecto `shopapi` del profesor.
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/UTE_logo.svg/320px-UTE_logo.svg.png" alt="Universidad UTE" width="180"/>
 
----
+<br/>
+<br/>
 
-## ⚙️ Tecnologías
+# LanguageAPI
 
-| Tecnología | Versión |
-|---|---|
-| Python | 3.11+ |
-| Django | 4.2+ |
-| Django REST Framework | 3.14+ |
-| Simple JWT | 5.3+ |
-| PostgreSQL | 14+ |
+### Backend para Aplicación de Aprendizaje de Idiomas
 
----
+*Seminario de Integración — Módulo 2*
 
-## 🚀 Instalación desde cero (Windows PowerShell)
+**Institución:** Universidad UTE  
+**Estudiante:** Danny Alexander Guamán Pillajo  
+**Semestre:** Cuarto Semestre  
 
-### 1. Clonar / entrar a la carpeta
-```powershell
-cd languageapi
-```
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![Django](https://img.shields.io/badge/Django-4.2+-092E20?style=for-the-badge&logo=django&logoColor=white)](https://djangoproject.com)
+[![DRF](https://img.shields.io/badge/Django_REST_Framework-3.14+-ff1709?style=for-the-badge&logo=django&logoColor=white)](https://www.django-rest-framework.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://postgresql.org)
+[![JWT](https://img.shields.io/badge/JWT-Auth-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)](https://jwt.io)
 
-### 2. Crear y activar entorno virtual
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-```
-
-### 3. Instalar dependencias
-```powershell
-pip install -r requirements.txt
-```
-
-### 4. Crear archivo .env (copiar del ejemplo)
-```powershell
-copy .env.example .env
-```
-Luego edita `.env` con tus datos reales de PostgreSQL.
-
-### 5. Crear la base de datos en PostgreSQL
-```sql
-CREATE DATABASE languageapi_db;
-```
-
-### 6. Aplicar migraciones
-```powershell
-python manage.py makemigrations
-python manage.py migrate
-```
-
-### 7. Crear superusuario (administrador)
-```powershell
-python manage.py createsuperuser
-```
-
-### 8. Ejecutar el servidor
-```powershell
-python manage.py runserver
-```
-
-Abre: **http://127.0.0.1:8000/**
+</div>
 
 ---
 
-## 🔌 Endpoints de la API
+## Descripción
 
-### Autenticación (no requiere token)
-| Método | URL | Descripción |
-|---|---|---|
-| POST | `/api/auth/register/` | Registrar nuevo usuario |
-| POST | `/api/auth/login/` | Login → retorna JWT |
-| POST | `/api/auth/token/refresh/` | Renovar token |
+LanguageAPI es un backend REST completo para una aplicación de aprendizaje de idiomas al estilo Duolingo / Babbel, construido con Django y Django REST Framework. Permite gestionar usuarios, cursos, lecciones, ejercicios, progreso, logros y suscripciones a través de una API segura con autenticación JWT.
 
-### Contenido Educativo (requiere token)
-| Método | URL | Descripción |
-|---|---|---|
-| GET/POST | `/api/languages/` | Idiomas disponibles |
-| GET/POST | `/api/courses/` | Cursos |
-| GET/POST | `/api/modules/` | Unidades / Módulos |
-| GET/POST | `/api/lessons/` | Lecciones |
-| GET/POST | `/api/exercises/` | Ejercicios |
-
-### Progreso y Gamificación (requiere token)
-| Método | URL | Descripción |
-|---|---|---|
-| GET/POST | `/api/progress/` | Progreso del usuario |
-| GET | `/api/stats/` | Estadísticas (XP, racha) |
-| GET | `/api/achievements/` | Logros disponibles |
-| GET | `/api/my-achievements/` | Tus logros desbloqueados |
-
-### Pagos y Suscripciones (requiere token)
-| Método | URL | Descripción |
-|---|---|---|
-| GET/POST | `/api/subscriptions/` | Planes disponibles |
-| GET/POST | `/api/my-subscriptions/` | Tus suscripciones |
-| GET/POST | `/api/payments/` | Historial de pagos |
+> Este proyecto está basado en la arquitectura del proyecto `shopapi` del profesor, adaptado completamente al dominio educativo de idiomas.
 
 ---
 
-## 🧪 Ejecutar tests
-```powershell
-python manage.py test
-```
-
----
-
-## 📁 Estructura del proyecto
-
-```
-languageapi/
-├── config/                  ← Configuración Django
-│   ├── settings.py
-│   ├── urls.py
-│   ├── wsgi.py
-│   └── asgi.py
-├── learning/                ← App principal
-│   ├── models/              ← 15 modelos de BD
-│   ├── serializers/         ← Serializers DRF
-│   ├── views/               ← ViewSets y endpoints
-│   ├── tests/               ← Tests unitarios
-│   ├── migrations/
-│   ├── urls.py              ← Rutas con DefaultRouter
-│   ├── pagination.py
-│   ├── permissions.py
-│   └── filters.py
-├── manage.py
-├── requirements.txt
-└── .env.example
-```
-
----
-
-## 🔐 Autenticación con JWT
-
-Incluye el token en el header de cada request:
-```
-Authorization: Bearer <tu_access_token>
-```
+## Arquitectura del Proyecto
