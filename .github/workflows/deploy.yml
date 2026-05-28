@@ -34,4 +34,4 @@ jobs:
           python manage.py migrate
           
           # 4. Reiniciar el servicio para aplicar cambios (ajusta el nombre del servicio si es necesario)
-          sudo systemctl restart idiomas
+          sudo systemctl restart gunicorn-shopapi.service
