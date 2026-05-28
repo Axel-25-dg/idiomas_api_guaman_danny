@@ -33,5 +33,5 @@ jobs:
           # 3. Correr migraciones de Django
           python manage.py migrate
           
-          # 4. Reiniciar el servicio para aplicar cambios (ajusta el nombre del servicio si es necesario)
+          # 4. Reiniciar el servicio real de Gunicorn
           sudo systemctl restart gunicorn-shopapi.service
