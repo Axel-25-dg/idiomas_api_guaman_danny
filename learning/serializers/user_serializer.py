@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
 from learning.models import User, UserProfile, Role
 
@@ -23,6 +24,18 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'role', 'profile', 'is_active', 'created_at']
         read_only_fields = ['created_at']
+
+
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        # Añadimos los campos personalizados al payload del JWT
+        token['is_staff'] = user.is_staff
+        token['is_superuser'] = user.is_superuser
+        token['role'] = user.role.name if user.role else None
+        return token
 
 
 class RegisterSerializer(serializers.ModelSerializer):
