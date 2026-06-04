@@ -5,7 +5,7 @@ from learning.views import (
     RegisterView, LoginView,
     LanguageViewSet, CourseViewSet, ModuleViewSet, LessonViewSet, ExerciseViewSet,
     UserProgressViewSet, UserStatsViewSet, AchievementViewSet, UserAchievementViewSet,
-    SubscriptionViewSet, UserSubscriptionViewSet, PaymentViewSet, OrderViewSet,
+    SubscriptionViewSet, UserSubscriptionViewSet, PaymentViewSet, OrderViewSet, StaffUserViewSet,
 )
 
 router = DefaultRouter()
@@ -27,6 +27,7 @@ router.register(r'my-achievements',  UserAchievementViewSet, basename='my-achiev
 router.register(r'subscriptions',    SubscriptionViewSet,     basename='subscription')
 router.register(r'my-subscriptions', UserSubscriptionViewSet, basename='my-subscription')
 router.register(r'payments',         PaymentViewSet,          basename='payment')
+router.register(r'users',            StaffUserViewSet,        basename='users')
 router.register(r'orders',           OrderViewSet,            basename='order')
 
 urlpatterns = [

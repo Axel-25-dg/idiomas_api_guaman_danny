@@ -4,3 +4,4 @@ from .progress_views import UserProgressViewSet, UserStatsViewSet, AchievementVi
 from .subscription_views import (
     SubscriptionViewSet, UserSubscriptionViewSet, PaymentViewSet, OrderViewSet
 )
+from .user_views import StaffUserViewSet

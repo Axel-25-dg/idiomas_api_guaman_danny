@@ -4,6 +4,7 @@ from .user_serializer import (
     UserProfileSerializer,
     RegisterSerializer,
     MyTokenObtainPairSerializer,
+    StaffUserSerializer,
 )
 from .course_serializer import LanguageSerializer, CourseSerializer, ModuleSerializer, LessonSerializer, ExerciseSerializer
 from .progress_serializer import UserProgressSerializer, UserStatsSerializer, AchievementSerializer, UserAchievementSerializer
