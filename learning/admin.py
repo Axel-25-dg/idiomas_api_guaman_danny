@@ -4,7 +4,7 @@ from learning.models import (
     Role, User, UserProfile, 
     Language, Course, Module, Lesson, Exercise, 
     UserProgress, UserStats, Achievement, UserAchievement, 
-    Subscription, UserSubscription, Payment, 
+    Subscription, UserSubscription, Payment, Order, 
 ) 
 
 @admin.register(Role) 
@@ -70,3 +70,8 @@ class UserSubscriptionAdmin(admin.ModelAdmin):
 @admin.register(Payment) 
 class PaymentAdmin(admin.ModelAdmin): 
     list_display = ['id', 'user', 'amount', 'payment_method', 'status'] 
+
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'subscription', 'total_amount', 'payment_method', 'status', 'created_at']

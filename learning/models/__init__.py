@@ -2,12 +2,12 @@ from .user import Role, User, UserProfile
 from .language import Language
 from .course import Course, Module, Lesson, Exercise
 from .progress import UserProgress, UserStats, Achievement, UserAchievement
-from .subscription import Subscription, UserSubscription, Payment
+from .subscription import Subscription, UserSubscription, Payment, Order
 
 __all__ = [
     'Role', 'User', 'UserProfile',
     'Language',
     'Course', 'Module', 'Lesson', 'Exercise',
     'UserProgress', 'UserStats', 'Achievement', 'UserAchievement',
-    'Subscription', 'UserSubscription', 'Payment',
+    'Subscription', 'UserSubscription', 'Payment', 'Order',
 ]
