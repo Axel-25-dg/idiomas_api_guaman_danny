@@ -4,59 +4,64 @@ from rest_framework.response import Response
 from django.db.models import Sum, Count
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
+
 from learning.models import Subscription, UserSubscription, Payment, Order
 from learning.serializers import (
-    SubscriptionSerializer, UserSubscriptionSerializer, PaymentSerializer, OrderSerializer
+    SubscriptionSerializer, UserSubscriptionSerializer,
+    PaymentSerializer, OrderSerializer,
 )
 from learning.pagination import StandardPagination
-from learning.permissions import IsAdminOrReadOnly
+from learning.permissions import IsAdminOrReadOnly, IsAdmin
 
 
 class SubscriptionViewSet(viewsets.ModelViewSet):
     """
-    GET    /api/subscriptions/        — Lista los planes disponibles
-    POST   /api/subscriptions/        — Crea un plan (solo admin)
-    GET    /api/subscriptions/{id}/   — Detalle del plan
-    PUT    /api/subscriptions/{id}/   — Actualiza (solo admin)
-    DELETE /api/subscriptions/{id}/   — Elimina (solo admin)
+    GET    /api/subscriptions/        — Autenticado (lectura)
+    POST   /api/subscriptions/        — Solo admin
+    PUT    /api/subscriptions/{id}/   — Solo admin
+    DELETE /api/subscriptions/{id}/   — Solo admin
+
+    Los planes de suscripción los gestiona únicamente el admin.
     """
-    queryset = Subscription.objects.all()
-    serializer_class = SubscriptionSerializer
+    queryset           = Subscription.objects.all()
+    serializer_class   = SubscriptionSerializer
     permission_classes = [IsAdminOrReadOnly]
-    pagination_class = StandardPagination
-    filter_backends = [OrderingFilter]
-    ordering_fields = ['price', 'duration_days']
+    pagination_class   = StandardPagination
+    filter_backends    = [OrderingFilter]
+    ordering_fields    = ['price', 'duration_days']
 
 
 class UserSubscriptionViewSet(viewsets.ModelViewSet):
     """
-    GET  /api/my-subscriptions/       — Suscripciones activas del usuario
+    GET  /api/my-subscriptions/       — Suscripciones del usuario autenticado
     POST /api/my-subscriptions/       — Suscribirse a un plan
     GET  /api/my-subscriptions/{id}/  — Detalle
     """
-    serializer_class = UserSubscriptionSerializer
+    serializer_class   = UserSubscriptionSerializer
     permission_classes = [permissions.IsAuthenticated]
-    pagination_class = StandardPagination
-    filter_backends = [DjangoFilterBackend, OrderingFilter]
-    filterset_fields = ['is_active']
-    ordering_fields = ['start_date', 'end_date']
+    pagination_class   = StandardPagination
+    filter_backends    = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields   = ['is_active']
+    ordering_fields    = ['start_date', 'end_date']
 
     def get_queryset(self):
-        return UserSubscription.objects.filter(user=self.request.user).select_related('subscription')
+        return UserSubscription.objects.filter(
+            user=self.request.user
+        ).select_related('subscription')
 
 
 class PaymentViewSet(viewsets.ModelViewSet):
     """
-    GET  /api/payments/       — Historial de pagos del usuario
+    GET  /api/payments/       — Historial de pagos del usuario autenticado
     POST /api/payments/       — Registrar un pago
     GET  /api/payments/{id}/  — Detalle del pago
     """
-    serializer_class = PaymentSerializer
+    serializer_class   = PaymentSerializer
     permission_classes = [permissions.IsAuthenticated]
-    pagination_class = StandardPagination
-    filter_backends = [DjangoFilterBackend, OrderingFilter]
-    filterset_fields = ['status', 'payment_method']
-    ordering_fields = ['transaction_date', 'amount']
+    pagination_class   = StandardPagination
+    filter_backends    = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields   = ['status', 'payment_method']
+    ordering_fields    = ['transaction_date', 'amount']
 
     def get_queryset(self):
         return Payment.objects.filter(user=self.request.user)
@@ -64,37 +69,41 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
 class OrderViewSet(viewsets.ModelViewSet):
     """
-    GET    /api/orders/          — Lista órdenes del usuario o todas si es admin
-    POST   /api/orders/          — Crea una orden para el usuario autenticado
-    GET    /api/orders/{id}/     — Detalle de la orden
-    GET    /api/orders/stats/    — Estadísticas de ventas (solo admin)
+    GET    /api/orders/          — Propias del usuario; admin ve todas
+    POST   /api/orders/          — Cualquier autenticado
+    GET    /api/orders/{id}/     — Detalle
+    GET    /api/orders/stats/    — Solo admin: estadísticas de ventas
     """
-    serializer_class = OrderSerializer
+    serializer_class   = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
-    pagination_class = StandardPagination
-    filter_backends = [DjangoFilterBackend, OrderingFilter]
-    filterset_fields = ['status', 'payment_method', 'subscription']
-    ordering_fields = ['created_at', 'total_amount']
+    pagination_class   = StandardPagination
+    filter_backends    = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields   = ['status', 'payment_method', 'subscription']
+    ordering_fields    = ['created_at', 'total_amount']
 
     def get_queryset(self):
-        if self.request.user.is_staff:
+        # Admin ve todas las órdenes; teacher y student solo las propias
+        if self.request.user.is_superuser:
             return Order.objects.select_related('user', 'subscription').all()
-        return Order.objects.filter(user=self.request.user).select_related('subscription')
+        return Order.objects.filter(
+            user=self.request.user
+        ).select_related('subscription')
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-    @action(detail=False, methods=['get'], url_path='stats')
+    @action(detail=False, methods=['get'], url_path='stats',
+            permission_classes=[IsAdmin])
     def stats(self, request):
-        if not request.user.is_staff:
-            return Response({'detail': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)
-
+        """
+        GET /api/orders/stats/
+        Estadísticas de ventas — solo admin (role='admin', is_superuser=True).
+        """
         stats_data = Order.objects.aggregate(
             total_revenue=Sum('total_amount'),
-            total_orders=Count('id')
+            total_orders=Count('id'),
         )
-
         return Response({
             'total_revenue': stats_data['total_revenue'] or 0.0,
-            'total_orders': stats_data['total_orders'] or 0,
+            'total_orders':  stats_data['total_orders']  or 0,
         }, status=status.HTTP_200_OK)

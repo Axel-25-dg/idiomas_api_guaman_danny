@@ -2,8 +2,16 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 
+# Nombres canónicos de roles — fuente de verdad
+ROLE_ADMIN   = 'admin'
+ROLE_TEACHER = 'teacher'
+ROLE_STUDENT = 'student'
+
+VALID_ROLES = {ROLE_ADMIN, ROLE_TEACHER, ROLE_STUDENT}
+
+
 class Role(models.Model):
-    name = models.CharField(max_length=50, unique=True)  # 'admin', 'student', 'teacher'
+    name = models.CharField(max_length=50, unique=True)  # 'admin' | 'teacher' | 'student'
 
     class Meta:
         ordering = ['name']
@@ -21,10 +29,10 @@ class User(AbstractUser):
         blank=True,
         related_name='users'
     )
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    is_active   = models.BooleanField(default=True)
+    created_at  = models.DateTimeField(auto_now_add=True)
 
-    USERNAME_FIELD = 'email'
+    USERNAME_FIELD  = 'email'
     REQUIRED_FIELDS = ['username']
 
     class Meta:
@@ -33,14 +41,51 @@ class User(AbstractUser):
     def __str__(self):
         return self.email
 
+    # ─────────────────────────────────────────────────────────────────
+    # Sincronización automática de flags según role
+    # Centralizada aquí — NO se duplica en serializers ni views.
+    #
+    #   admin   → is_staff=True,  is_superuser=True
+    #   teacher → is_staff=True,  is_superuser=False
+    #   student → is_staff=False, is_superuser=False
+    #   None    → is_staff=False, is_superuser=False  (fallback seguro)
+    # ─────────────────────────────────────────────────────────────────
+    def sync_flags_from_role(self):
+        """Sincroniza is_staff / is_superuser a partir del role actual.
+        Llama explícitamente antes de save() cuando el role cambia."""
+        role_name = self.role.name if self.role else None
+
+        if role_name == ROLE_ADMIN:
+            self.is_staff      = True
+            self.is_superuser  = True
+        elif role_name == ROLE_TEACHER:
+            self.is_staff      = True
+            self.is_superuser  = False
+        else:
+            # student o sin rol
+            self.is_staff      = False
+            self.is_superuser  = False
+
+    def save(self, *args, **kwargs):
+        # Sincroniza flags SOLO cuando hay un role FK asignado.
+        # Si role_id es None, NO toca is_staff / is_superuser
+        # → Permite que create_superuser() y migraciones funcionen sin problemas.
+        if self.role_id is not None:
+            try:
+                self.sync_flags_from_role()
+            except Exception:
+                # Protección ante migraciones donde la tabla Role aún no existe
+                pass
+        super().save(*args, **kwargs)
+
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    first_name = models.CharField(max_length=100, blank=True)
-    last_name = models.CharField(max_length=100, blank=True)
-    avatar_url = models.URLField(blank=True, null=True)
+    user            = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    first_name      = models.CharField(max_length=100, blank=True)
+    last_name       = models.CharField(max_length=100, blank=True)
+    avatar_url      = models.URLField(blank=True, null=True)
     native_language = models.CharField(max_length=50, blank=True)
-    timezone = models.CharField(max_length=50, default='America/Guayaquil')
+    timezone        = models.CharField(max_length=50, default='America/Guayaquil')
 
     class Meta:
         ordering = ['user']
