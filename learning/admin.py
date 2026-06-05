@@ -8,6 +8,9 @@ from learning.models import (
     Language, Course, Module, Lesson, Exercise,
     UserProgress, UserStats, Achievement, UserAchievement,
     Subscription, UserSubscription, Payment, Order,
+    Classroom, ClassroomEnrollment,
+    Certificate,
+    TeacherResource,
 )
 
 # ─── Configuración general del sitio admin ────────────────────────────────────
@@ -375,3 +378,119 @@ class OrderAdmin(admin.ModelAdmin):
             color, label
         )
     status_badge.short_description = 'Estado'
+
+
+# ─── CLASSROOMS ───────────────────────────────────────────────────────────────
+
+class ClassroomEnrollmentInline(admin.TabularInline):
+    model        = ClassroomEnrollment
+    extra        = 0
+    fields       = ['student', 'enrolled_at', 'is_active']
+    readonly_fields = ['enrolled_at']
+
+
+@admin.register(Classroom)
+class ClassroomAdmin(admin.ModelAdmin):
+    inlines        = [ClassroomEnrollmentInline]
+    list_display   = ['id', 'name', 'teacher', 'course', 'access_code', 'status_badge', 'total_students', 'created_at']
+    list_filter    = ['is_active', 'course']
+    search_fields  = ['name', 'teacher__email', 'access_code']
+    ordering       = ['-created_at']
+    readonly_fields = ['access_code', 'created_at']
+
+    def status_badge(self, obj):
+        color = '#198754' if obj.is_active else '#dc3545'
+        label = 'Activa' if obj.is_active else 'Inactiva'
+        return format_html(
+            '<span style="background:{};color:white;padding:2px 8px;'
+            'border-radius:4px;font-size:11px">{}</span>',
+            color, label
+        )
+    status_badge.short_description = 'Estado'
+
+    def total_students(self, obj):
+        return obj.enrollments.filter(is_active=True).count()
+    total_students.short_description = 'Alumnos activos'
+
+
+@admin.register(ClassroomEnrollment)
+class ClassroomEnrollmentAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'student', 'classroom', 'enrolled_at', 'is_active']
+    list_filter   = ['is_active', 'classroom']
+    search_fields = ['student__email', 'classroom__name']
+    readonly_fields = ['enrolled_at']
+
+
+# ─── CERTIFICATES ─────────────────────────────────────────────────────────────
+
+@admin.register(Certificate)
+class CertificateAdmin(admin.ModelAdmin):
+    list_display   = [
+        'id', 'certificate_code', 'student', 'level',
+        'status_badge', 'issued_by', 'issued_at', 'created_at',
+    ]
+    list_filter    = ['level', 'status']
+    search_fields  = ['certificate_code', 'student__email', 'title']
+    ordering       = ['-created_at']
+    readonly_fields = ['certificate_code', 'created_at']
+    actions        = ['issue_certificates', 'revoke_certificates']
+
+    def issue_certificates(self, request, queryset):
+        from django.utils import timezone
+        updated = queryset.filter(status='pending').update(
+            status='issued',
+            issued_at=timezone.now(),
+            issued_by=request.user,
+        )
+        self.message_user(request, f'{updated} certificado(s) emitido(s).')
+    issue_certificates.short_description = 'Emitir certificados seleccionados'
+
+    def revoke_certificates(self, request, queryset):
+        updated = queryset.exclude(status='revoked').update(status='revoked')
+        self.message_user(request, f'{updated} certificado(s) revocado(s).')
+    revoke_certificates.short_description = 'Revocar certificados seleccionados'
+
+    def status_badge(self, obj):
+        colors = {'issued': '#198754', 'pending': '#fd7e14', 'revoked': '#dc3545'}
+        labels = {'issued': 'Emitido', 'pending': 'Pendiente', 'revoked': 'Revocado'}
+        color  = colors.get(obj.status, '#6c757d')
+        label  = labels.get(obj.status, obj.status)
+        return format_html(
+            '<span style="background:{};color:white;padding:2px 8px;'
+            'border-radius:4px;font-size:11px">{}</span>',
+            color, label
+        )
+    status_badge.short_description = 'Estado'
+
+
+# ─── TEACHER RESOURCES ────────────────────────────────────────────────────────
+
+@admin.register(TeacherResource)
+class TeacherResourceAdmin(admin.ModelAdmin):
+    list_display   = [
+        'id', 'title', 'teacher', 'resource_type_badge',
+        'course', 'lesson', 'is_public', 'created_at',
+    ]
+    list_filter    = ['resource_type', 'is_public', 'course']
+    search_fields  = ['title', 'description', 'teacher__email']
+    ordering       = ['-created_at']
+    readonly_fields = ['created_at', 'updated_at']
+
+    RESOURCE_COLORS = {
+        'pdf':   '#dc3545',
+        'audio': '#0d6efd',
+        'video': '#6f42c1',
+        'word':  '#0dcaf0',
+        'image': '#198754',
+        'link':  '#fd7e14',
+        'other': '#6c757d',
+    }
+
+    def resource_type_badge(self, obj):
+        color = self.RESOURCE_COLORS.get(obj.resource_type, '#6c757d')
+        return format_html(
+            '<span style="background:{};color:white;padding:2px 8px;'
+            'border-radius:4px;font-size:11px;font-weight:bold">{}</span>',
+            color, obj.get_resource_type_display().upper()
+        )
+    resource_type_badge.short_description = 'Tipo'

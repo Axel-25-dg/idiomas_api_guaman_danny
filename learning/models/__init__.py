@@ -3,6 +3,9 @@ from .language import Language
 from .course import Course, Module, Lesson, Exercise
 from .progress import UserProgress, UserStats, Achievement, UserAchievement
 from .subscription import Subscription, UserSubscription, Payment, Order
+from .classroom import Classroom, ClassroomEnrollment
+from .certificate import Certificate
+from .resource import TeacherResource
 
 __all__ = [
     # Constantes de roles
@@ -16,4 +19,8 @@ __all__ = [
     'UserProgress', 'UserStats', 'Achievement', 'UserAchievement',
     # Suscripciones y pagos
     'Subscription', 'UserSubscription', 'Payment', 'Order',
+    # Nuevos módulos
+    'Classroom', 'ClassroomEnrollment',
+    'Certificate',
+    'TeacherResource',
 ]

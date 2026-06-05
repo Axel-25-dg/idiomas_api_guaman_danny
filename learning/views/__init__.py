@@ -5,3 +5,6 @@ from .subscription_views import (
     SubscriptionViewSet, UserSubscriptionViewSet, PaymentViewSet, OrderViewSet
 )
 from .user_views import StaffUserViewSet
+from .classroom_views import ClassroomViewSet
+from .certificate_views import CertificateViewSet
+from .resource_views import TeacherResourceViewSet

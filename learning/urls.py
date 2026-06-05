@@ -8,6 +8,7 @@ from learning.views import (
     UserProgressViewSet, UserStatsViewSet, AchievementViewSet, UserAchievementViewSet,
     SubscriptionViewSet, UserSubscriptionViewSet, PaymentViewSet, OrderViewSet,
     StaffUserViewSet,
+    ClassroomViewSet, CertificateViewSet, TeacherResourceViewSet,
 )
 
 router = DefaultRouter()
@@ -34,12 +35,17 @@ router.register(r'orders',           OrderViewSet,            basename='order')
 # ── Gestión de usuarios ──────────────────────────────────────────────────────
 router.register(r'users',  StaffUserViewSet, basename='users')
 
+# ── Nuevos módulos ───────────────────────────────────────────────────────────
+router.register(r'classrooms',   ClassroomViewSet,       basename='classroom')
+router.register(r'certificates', CertificateViewSet,     basename='certificate')
+router.register(r'resources',    TeacherResourceViewSet, basename='resource')
+
 urlpatterns = [
     # ── Autenticación ────────────────────────────────────────────────────────
     path('auth/register/',      RegisterView.as_view(),      name='register'),
     path('auth/login/',         LoginView.as_view(),         name='login'),
     path('auth/token/refresh/', TokenRefreshView.as_view(),  name='token_refresh'),
-    path('auth/me/',            MeView.as_view(),            name='me'),   # <-- NUEVO
+    path('auth/me/',            MeView.as_view(),            name='me'),
 
     # ── Router ───────────────────────────────────────────────────────────────
     path('', include(router.urls)),
