@@ -47,9 +47,11 @@ class ClassroomViewSet(viewsets.ModelViewSet):
         user = self.request.user
         role = _get_role(user)
         if role == ROLE_STUDENT:
-            # El estudiante no debería llegar aquí directamente,
-            # pero por seguridad devolvemos vacío
-            return Classroom.objects.none()
+            # El estudiante ve las clases en las que está inscrito y activas
+            return Classroom.objects.filter(
+                enrollments__student=user,
+                enrollments__is_active=True,
+            ).select_related('teacher', 'course').distinct()
         if user.is_superuser:
             return Classroom.objects.select_related('teacher', 'course').all()
         # Teacher ve solo sus clases
