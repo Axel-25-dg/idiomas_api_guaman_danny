@@ -35,9 +35,15 @@ class TeacherResourceSerializer(serializers.ModelSerializer):
         read_only_fields = ['teacher', 'created_at', 'updated_at']
 
     def validate(self, attrs):
+        # Obligar asociación a curso — no permitir recursos sin course
+        course = attrs.get('course')
+        if course is None:
+            raise serializers.ValidationError(
+                {'course': 'Este campo es requerido. Todo recurso debe estar asociado a un curso.'}
+            )
+
         # Si se indica lesson, verificar que pertenece al course indicado
         lesson = attrs.get('lesson')
-        course = attrs.get('course')
         if lesson and course and lesson.module.course != course:
             raise serializers.ValidationError(
                 'La lección seleccionada no pertenece al curso indicado.'

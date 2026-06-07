@@ -51,11 +51,15 @@ class ClassroomViewSet(viewsets.ModelViewSet):
             return Classroom.objects.filter(
                 enrollments__student=user,
                 enrollments__is_active=True,
-            ).select_related('teacher', 'course').distinct()
+            ).select_related('teacher', 'course').prefetch_related('enrollments').distinct()
         if user.is_superuser:
-            return Classroom.objects.select_related('teacher', 'course').all()
+            return Classroom.objects.select_related(
+                'teacher', 'course'
+            ).prefetch_related('enrollments').all()
         # Teacher ve solo sus clases
-        return Classroom.objects.filter(teacher=user).select_related('course')
+        return Classroom.objects.filter(
+            teacher=user
+        ).select_related('course').prefetch_related('enrollments')
 
     def get_permissions(self):
         if self.action in ('join', 'mine'):

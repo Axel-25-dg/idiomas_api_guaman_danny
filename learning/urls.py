@@ -10,6 +10,7 @@ from learning.views import (
     SubscriptionViewSet, UserSubscriptionViewSet, PaymentViewSet, OrderViewSet,
     StaffUserViewSet,
     ClassroomViewSet, CertificateViewSet, TeacherResourceViewSet,
+    StudentDashboardView, TeacherDashboardView, AdminDashboardView,
 )
 
 router = DefaultRouter()
@@ -48,6 +49,11 @@ urlpatterns = [
     path('auth/login/',         LoginView.as_view(),         name='login'),
     path('auth/token/refresh/', TokenRefreshView.as_view(),  name='token_refresh'),
     path('auth/me/',            MeView.as_view(),            name='me'),
+
+    # ── Dashboards ───────────────────────────────────────────────────────────
+    path('dashboard/student/',  StudentDashboardView.as_view(),  name='dashboard-student'),
+    path('dashboard/teacher/',  TeacherDashboardView.as_view(),  name='dashboard-teacher'),
+    path('dashboard/admin/',    AdminDashboardView.as_view(),    name='dashboard-admin'),
 
     # ── Router ───────────────────────────────────────────────────────────────
     path('', include(router.urls)),

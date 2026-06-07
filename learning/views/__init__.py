@@ -11,3 +11,4 @@ from .user_views import StaffUserViewSet
 from .classroom_views import ClassroomViewSet
 from .certificate_views import CertificateViewSet
 from .resource_views import TeacherResourceViewSet
+from .dashboard_views import StudentDashboardView, TeacherDashboardView, AdminDashboardView
