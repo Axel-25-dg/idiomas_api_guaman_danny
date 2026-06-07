@@ -1,6 +1,9 @@
 from .auth_views import RegisterView, LoginView, MeView
 from .course_views import LanguageViewSet, CourseViewSet, ModuleViewSet, LessonViewSet, ExerciseViewSet
-from .progress_views import UserProgressViewSet, UserStatsViewSet, AchievementViewSet, UserAchievementViewSet
+from .progress_views import (
+    UserProgressViewSet, UserStatsViewSet, AchievementViewSet,
+    UserAchievementViewSet, RankingViewSet,
+)
 from .subscription_views import (
     SubscriptionViewSet, UserSubscriptionViewSet, PaymentViewSet, OrderViewSet
 )

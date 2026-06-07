@@ -5,11 +5,12 @@ from learning.serializers.course_serializer import CourseSerializer
 
 
 class ClassroomEnrollmentSerializer(serializers.ModelSerializer):
-    student_email = serializers.EmailField(source='student.email', read_only=True)
+    student_email    = serializers.EmailField(source='student.email', read_only=True)
+    student_username = serializers.CharField(source='student.username', read_only=True)
 
     class Meta:
         model  = ClassroomEnrollment
-        fields = ['id', 'student', 'student_email', 'enrolled_at', 'is_active']
+        fields = ['id', 'student', 'student_email', 'student_username', 'enrolled_at', 'is_active']
         read_only_fields = ['enrolled_at']
 
 
@@ -53,13 +54,17 @@ class ClassroomSerializer(serializers.ModelSerializer):
 
 class ClassroomDetailSerializer(ClassroomSerializer):
     """
-    Serializer extendido con lista de estudiantes inscritos.
+    Serializer extendido con lista de estudiantes inscritos (solo activos).
     Usado en GET /api/classrooms/{id}/ por el profesor.
     """
-    enrollments = ClassroomEnrollmentSerializer(many=True, read_only=True)
+    enrollments = serializers.SerializerMethodField()
 
     class Meta(ClassroomSerializer.Meta):
         fields = ClassroomSerializer.Meta.fields + ['enrollments']
+
+    def get_enrollments(self, obj):
+        active_enrollments = obj.enrollments.filter(is_active=True).select_related('student')
+        return ClassroomEnrollmentSerializer(active_enrollments, many=True).data
 
 
 class JoinClassroomSerializer(serializers.Serializer):

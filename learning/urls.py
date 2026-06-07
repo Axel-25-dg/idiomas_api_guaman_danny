@@ -6,6 +6,7 @@ from learning.views import (
     RegisterView, LoginView, MeView,
     LanguageViewSet, CourseViewSet, ModuleViewSet, LessonViewSet, ExerciseViewSet,
     UserProgressViewSet, UserStatsViewSet, AchievementViewSet, UserAchievementViewSet,
+    RankingViewSet,
     SubscriptionViewSet, UserSubscriptionViewSet, PaymentViewSet, OrderViewSet,
     StaffUserViewSet,
     ClassroomViewSet, CertificateViewSet, TeacherResourceViewSet,
@@ -25,6 +26,7 @@ router.register(r'progress',        UserProgressViewSet,    basename='progress')
 router.register(r'stats',           UserStatsViewSet,       basename='stats')
 router.register(r'achievements',    AchievementViewSet,     basename='achievement')
 router.register(r'my-achievements', UserAchievementViewSet, basename='my-achievement')
+router.register(r'ranking',         RankingViewSet,         basename='ranking')
 
 # ── Pagos / Suscripciones ────────────────────────────────────────────────────
 router.register(r'subscriptions',    SubscriptionViewSet,     basename='subscription')
