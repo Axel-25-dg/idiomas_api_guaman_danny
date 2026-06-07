@@ -26,3 +26,21 @@ class StaffUserViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # Lista solo staff (teachers y admins), no students
         return User.objects.filter(is_staff=True).select_related('role')
+
+
+class AdminStudentViewSet(viewsets.ModelViewSet):
+    """
+    Endpoint exclusivo para que el administrador vea y gestione Estudiantes.
+
+    GET    /api/admin-students/         — Lista todos los estudiantes
+    GET    /api/admin-students/{id}/    — Detalle de un estudiante
+    PATCH  /api/admin-students/{id}/    — Actualizar estudiante
+    DELETE /api/admin-students/{id}/    — Eliminar estudiante
+    """
+    serializer_class   = StaffUserSerializer
+    permission_classes = [IsAdmin]
+    pagination_class   = StandardPagination
+
+    def get_queryset(self):
+        # Filtra únicamente a los usuarios que NO son staff (Estudiantes puros)
+        return User.objects.filter(is_staff=False).select_related('role')

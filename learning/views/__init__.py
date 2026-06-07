@@ -7,7 +7,7 @@ from .progress_views import (
 from .subscription_views import (
     SubscriptionViewSet, UserSubscriptionViewSet, PaymentViewSet, OrderViewSet
 )
-from .user_views import StaffUserViewSet
+from .user_views import StaffUserViewSet, AdminStudentViewSet
 from .classroom_views import ClassroomViewSet
 from .certificate_views import CertificateViewSet
 from .resource_views import TeacherResourceViewSet

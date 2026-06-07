@@ -8,7 +8,7 @@ from learning.views import (
     UserProgressViewSet, UserStatsViewSet, AchievementViewSet, UserAchievementViewSet,
     RankingViewSet,
     SubscriptionViewSet, UserSubscriptionViewSet, PaymentViewSet, OrderViewSet,
-    StaffUserViewSet,
+    StaffUserViewSet, AdminStudentViewSet,
     ClassroomViewSet, CertificateViewSet, TeacherResourceViewSet,
     StudentDashboardView, TeacherDashboardView, AdminDashboardView,
 )
@@ -36,7 +36,8 @@ router.register(r'payments',         PaymentViewSet,          basename='payment'
 router.register(r'orders',           OrderViewSet,            basename='order')
 
 # ── Gestión de usuarios ──────────────────────────────────────────────────────
-router.register(r'users',  StaffUserViewSet, basename='users')
+router.register(r'users',           StaffUserViewSet,    basename='users')
+router.register(r'admin-students',  AdminStudentViewSet, basename='admin-students')
 
 # ── Nuevos módulos ───────────────────────────────────────────────────────────
 router.register(r'classrooms',   ClassroomViewSet,       basename='classroom')
