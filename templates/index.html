@@ -1,0 +1,179 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JumpUp UTE - Descargar Aplicación</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0c00ff 0%, #1a0066 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 480px;
+            width: 100%;
+        }
+
+        .logo {
+            width: 140px;
+            height: 140px;
+            margin-bottom: 24px;
+            border-radius: 28px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.85;
+            margin-bottom: 12px;
+            font-weight: 300;
+        }
+
+        .description {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 36px;
+            line-height: 1.6;
+        }
+
+        .btn-download {
+            display: inline-block;
+            background-color: #ffffff;
+            color: #0c00ff;
+            padding: 16px 40px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            text-decoration: none;
+            border-radius: 50px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-download:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+        }
+
+        .btn-download:active {
+            transform: scale(0.98);
+        }
+
+        .features {
+            margin-top: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            text-align: left;
+        }
+
+        .feature {
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 14px;
+            backdrop-filter: blur(4px);
+        }
+
+        .feature-icon {
+            font-size: 1.5rem;
+            margin-bottom: 6px;
+        }
+
+        .feature-text {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .version-info {
+            margin-top: 32px;
+            font-size: 0.8rem;
+            opacity: 0.6;
+        }
+
+        .links {
+            margin-top: 20px;
+        }
+
+        .links a {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-size: 0.85rem;
+            margin: 0 10px;
+            transition: color 0.2s;
+        }
+
+        .links a:hover {
+            color: #ffffff;
+        }
+
+        @media (max-width: 500px) {
+            h1 { font-size: 2.2rem; }
+            .features { grid-template-columns: 1fr; }
+            .logo { width: 100px; height: 100px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img class="logo" src="{% static 'downloads/JumpUp_Logo.png' %}" alt="JumpUp Logo"
+             onerror="this.style.display='none'">
+
+        <h1>JUMPUP</h1>
+        <p class="subtitle">Universidad Tecnológica Equinoccial</p>
+        <p class="description">
+            Aprende idiomas de forma interactiva con cursos, ejercicios,
+            gamificación y certificados oficiales.
+        </p>
+
+        <a href="{% static 'downloads/JumpUp.apk' %}" class="btn-download" download>
+            ⬇ Descargar para Android
+        </a>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">📚</div>
+                <div class="feature-text">Cursos por niveles A1 a C2</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🏆</div>
+                <div class="feature-text">Logros y XP automáticos</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🎓</div>
+                <div class="feature-text">Certificados verificables</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">👨‍🏫</div>
+                <div class="feature-text">Clases con profesor</div>
+            </div>
+        </div>
+
+        <div class="version-info">
+            Versión 1.0.0 · Android 8.0+ · Requiere conexión a internet
+        </div>
+
+        <div class="links">
+            <a href="/admin/">Panel Admin</a>
+            <a href="/api/">API REST</a>
+        </div>
+    </div>
+</body>
+</html>
