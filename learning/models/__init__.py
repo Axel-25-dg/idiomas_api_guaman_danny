@@ -6,6 +6,8 @@ from .subscription import Subscription, UserSubscription, Payment, Order
 from .classroom import Classroom, ClassroomEnrollment
 from .certificate import Certificate
 from .resource import TeacherResource
+from .media_file import MediaFile
+from .email_log import EmailLog
 
 __all__ = [
     # Constantes de roles
@@ -23,4 +25,6 @@ __all__ = [
     'Classroom', 'ClassroomEnrollment',
     'Certificate',
     'TeacherResource',
+    'MediaFile',
+    'EmailLog',
 ]

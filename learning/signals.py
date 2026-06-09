@@ -17,6 +17,16 @@ from django.utils import timezone
 from datetime import timedelta
 
 
+@receiver(post_save, sender='learning.User')
+def create_user_profile(sender, instance, created, **kwargs):
+    """
+    Crea automáticamente un UserProfile cada vez que se registra un nuevo usuario.
+    """
+    if created:
+        from learning.models import UserProfile
+        UserProfile.objects.get_or_create(user=instance)
+
+
 @receiver(post_save, sender='learning.UserProgress')
 def on_progress_saved(sender, instance, created, **kwargs):
     """

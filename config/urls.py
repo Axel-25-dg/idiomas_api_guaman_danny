@@ -15,6 +15,7 @@ urlpatterns = [
     path('api/', include('learning.urls')),
 ]
 
-# Servir archivos estáticos en desarrollo (en producción Nginx los sirve directamente)
+# Servir archivos estáticos y media en desarrollo
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

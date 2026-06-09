@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; color: #333; background: #f7f7f7; margin: 0; padding: 0; }
+        .container { background: #ffffff; margin: 24px auto; padding: 24px; max-width: 680px; border-radius: 12px; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
+        .header { border-bottom: 1px solid #eaeaea; padding-bottom: 12px; margin-bottom: 24px; }
+        .footer { color: #888; font-size: 13px; margin-top: 32px; }
+        .button { display: inline-block; background: #0056d2; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>{{ subject }}</h1>
+    </div>
+    {% block content %}{% endblock %}
+    <div class="footer">
+        <p>Gracias por usar JumpUp UTE.</p>
+    </div>
+</div>
+</body>
+</html>

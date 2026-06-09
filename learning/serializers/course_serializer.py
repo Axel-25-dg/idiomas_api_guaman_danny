@@ -13,10 +13,32 @@ class LanguageSerializer(serializers.ModelSerializer):
 
 class CourseSerializer(serializers.ModelSerializer):
     language_name = serializers.CharField(source='language.name', read_only=True)
+    image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
-        fields = ['id', 'language', 'language_name', 'title', 'description', 'difficulty_level']
+        fields = [
+            'id', 'language', 'language_name', 'title', 'description',
+            'difficulty_level', 'image', 'image_url'
+        ]
+        extra_kwargs = {'image': {'write_only': True}}
+
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+        if obj.image:
+            return request.build_absolute_uri(obj.image.url) if request else obj.image.url
+        return None
+
+    def validate_image(self, value):
+        if not value:
+            return value
+        max_size = 2 * 1024 * 1024  # 2 MB
+        valid_types = ['image/jpeg', 'image/png', 'image/webp']
+        if value.size > max_size:
+            raise serializers.ValidationError('La imagen no debe exceder los 2 MB.')
+        if value.content_type not in valid_types:
+            raise serializers.ValidationError('Solo se permiten imágenes JPEG, PNG y WebP.')
+        return value
 
 
 class ModuleSerializer(serializers.ModelSerializer):

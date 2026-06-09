@@ -1,0 +1,10 @@
+{% extends 'emails/email_base.html' %}
+{% block content %}
+<p>Hola {{ user.username }},</p>
+<p>Tu certificado <strong>{{ certificate.title }}</strong> ha sido emitido con éxito.</p>
+{% if download_link %}
+<p>Puedes descargarlo aquí:</p>
+<p><a href="{{ download_link }}" class="button">Ver certificado</a></p>
+{% endif %}
+<p>Gracias por tu esfuerzo en el aprendizaje.</p>
+{% endblock %}

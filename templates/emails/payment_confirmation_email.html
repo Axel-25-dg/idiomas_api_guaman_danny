@@ -1,0 +1,7 @@
+{% extends 'emails/email_base.html' %}
+{% block content %}
+<p>Hola {{ user.username }},</p>
+<p>Hemos recibido tu pago por <strong>${{ payment.amount }}</strong>.</p>
+<p>Estado de la transacción: <strong>{{ payment.status }}</strong>.</p>
+<p>Gracias por seguir con nosotros.</p>
+{% endblock %}

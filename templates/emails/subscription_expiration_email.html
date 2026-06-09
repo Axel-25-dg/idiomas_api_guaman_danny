@@ -1,0 +1,6 @@
+{% extends 'emails/email_base.html' %}
+{% block content %}
+<p>Hola {{ user.username }},</p>
+<p>Tu suscripción <strong>{{ subscription.name }}</strong> vencerá el {{ expiration_date }}.</p>
+<p>Renueva a tiempo para no perder el acceso a los cursos.</p>
+{% endblock %}

@@ -26,6 +26,7 @@ class Certificate(models.Model):
       2. El admin/profesor lo aprueba → status='issued'.
       3. Se genera un código único para verificación externa.
     """
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
     student          = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -56,17 +57,28 @@ class Certificate(models.Model):
         editable=False,
         help_text='Código único de verificación del certificado',
     )
+    certificate_file = models.ForeignKey(
+        'MediaFile',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='certificates',
+    )
     status           = models.CharField(
         max_length=10,
         choices=CERTIFICATE_STATUS_CHOICES,
         default='pending',
+        db_index=True,
     )
     issued_at        = models.DateTimeField(null=True, blank=True)
-    created_at       = models.DateTimeField(auto_now_add=True)
+    created_at       = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at       = models.DateTimeField(auto_now=True)
+    deleted_at       = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering        = ['-created_at']
         unique_together = ['student', 'level']  # un certificado por nivel por estudiante
+        indexes = [models.Index(fields=['level']), models.Index(fields=['status'])]
 
     def __str__(self):
         return f'{self.certificate_code} — {self.student.email} ({self.level})'

@@ -39,13 +39,13 @@ class UserProfileInline(admin.StackedInline):
     model       = UserProfile
     can_delete  = False
     verbose_name_plural = 'Perfil'
-    fields      = ['first_name', 'last_name', 'avatar_url', 'native_language', 'timezone']
+    fields      = ['first_name', 'last_name', 'avatar', 'avatar_url', 'native_language', 'timezone']
     extra       = 0
 
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    inlines        = [UserProfileInline]
+    # inlines        = [UserProfileInline]
     list_display   = [
         'id', 'email', 'username', 'role_badge',
         'is_staff', 'is_superuser', 'is_active', 'created_at'
@@ -117,7 +117,7 @@ class ModuleInline(admin.TabularInline):
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
     inlines        = [ModuleInline]
-    list_display   = ['id', 'title', 'language', 'difficulty_badge', 'total_modules']
+    list_display   = ['id', 'title', 'language', 'difficulty_badge', 'total_modules', 'image_preview']
     list_filter    = ['difficulty_level', 'language']
     search_fields  = ['title', 'description']
     ordering       = ['language', 'difficulty_level']
@@ -140,6 +140,15 @@ class CourseAdmin(admin.ModelAdmin):
     def total_modules(self, obj):
         return obj.modules.count()
     total_modules.short_description = 'Módulos'
+
+    def image_preview(self, obj):
+        if obj.image:
+            return format_html(
+                '<img src="{}" style="height:30px;width:auto;" />',
+                obj.image.url
+            )
+        return '—'
+    image_preview.short_description = 'Imagen'
 
 
 # ─── MÓDULOS ──────────────────────────────────────────────────────────────────

@@ -1,4 +1,7 @@
-from .auth_views import RegisterView, LoginView, MeView
+from .auth_views import (
+    RegisterView, LoginView, MeView,
+    PasswordResetRequestView, PasswordResetConfirmView
+)
 from .course_views import LanguageViewSet, CourseViewSet, ModuleViewSet, LessonViewSet, ExerciseViewSet
 from .progress_views import (
     UserProgressViewSet, UserStatsViewSet, AchievementViewSet,

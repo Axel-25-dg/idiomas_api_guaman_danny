@@ -4,6 +4,8 @@ from .user_serializer import (
     UserProfileSerializer,
     RegisterSerializer,
     MyTokenObtainPairSerializer,
+    PasswordResetRequestSerializer,
+    PasswordResetConfirmSerializer,
     StaffUserSerializer,
 )
 from .course_serializer import (

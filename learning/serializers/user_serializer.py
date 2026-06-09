@@ -14,25 +14,65 @@ class RoleSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    avatar_url = serializers.SerializerMethodField()
+
     class Meta:
         model = UserProfile
-        fields = ['id', 'first_name', 'last_name', 'avatar_url', 'native_language', 'timezone']
+        fields = [
+            'id', 'first_name', 'last_name', 'avatar', 'avatar_url',
+            'native_language', 'timezone'
+        ]
+        extra_kwargs = {'avatar': {'write_only': True}}
+
+    def get_avatar_url(self, obj):
+        request = self.context.get('request')
+        if obj.avatar:
+            return request.build_absolute_uri(obj.avatar.url) if request else obj.avatar.url
+        return obj.avatar_url  # Fallback a la URL manual si existe
+
+    def validate_avatar(self, value):
+        if not value:
+            return value
+        max_size = 2 * 1024 * 1024  # 2 MB
+        valid_types = ['image/jpeg', 'image/png', 'image/webp']
+        if value.size > max_size:
+            raise serializers.ValidationError('La imagen no debe exceder los 2 MB.')
+        if value.content_type not in valid_types:
+            raise serializers.ValidationError('Solo se permiten imágenes JPEG, PNG y WebP.')
+        return value
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Serializer de lectura general. Se usa en /api/auth/me/ y en respuestas."""
-    profile  = UserProfileSerializer(read_only=True)
-    role     = RoleSerializer(read_only=True)
+    """Serializer para el usuario autenticado. Soporta actualización de perfil."""
+    profile = UserProfileSerializer()
+    role = RoleSerializer(read_only=True)
 
     class Meta:
-        model  = User
+        model = User
         fields = [
-            'id', 'username', 'email',
+            'id', 'username', 'email', 'first_name', 'last_name',
             'role', 'profile',
             'is_staff', 'is_superuser', 'is_active',
             'created_at',
         ]
-        read_only_fields = ['created_at', 'is_staff', 'is_superuser']
+        read_only_fields = ['created_at', 'is_staff', 'is_superuser', 'username', 'email']
+
+    def update(self, instance, validated_data):
+        profile_data = validated_data.pop('profile', None)
+        
+        # Actualizar campos del User (si se enviaron)
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
+        instance.save()
+
+        # Actualizar campos del Profile
+        if profile_data:
+            profile = instance.profile
+            for attr, value in profile_data.items():
+                setattr(profile, attr, value)
+            profile.save()
+
+        return instance
 
 
 # ─── JWT ──────────────────────────────────────────────────────────────────────
@@ -115,6 +155,24 @@ class RegisterSerializer(serializers.ModelSerializer):
         UserProfile.objects.get_or_create(user=user)
 
         return user
+
+
+# ─── Password Reset ──────────────────────────────────────────────────────────
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    password = serializers.CharField(write_only=True, validators=[validate_password])
+    password2 = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError({'password2': 'Las contraseñas no coinciden.'})
+        return attrs
 
 
 # ─── Gestión de usuarios Staff (admin only) ───────────────────────────────────

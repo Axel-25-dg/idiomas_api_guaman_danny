@@ -1,0 +1,6 @@
+{% extends 'emails/email_base.html' %}
+{% block content %}
+<p>Hola {{ user.username }},</p>
+<p>Hay una nueva actualización en el curso <strong>{{ course.title }}</strong>:</p>
+<p>{{ message }}</p>
+{% endblock %}

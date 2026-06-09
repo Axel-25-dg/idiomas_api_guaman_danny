@@ -4,6 +4,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from learning.views import (
     RegisterView, LoginView, MeView,
+    PasswordResetRequestView, PasswordResetConfirmView,
     LanguageViewSet, CourseViewSet, ModuleViewSet, LessonViewSet, ExerciseViewSet,
     UserProgressViewSet, UserStatsViewSet, AchievementViewSet, UserAchievementViewSet,
     RankingViewSet,
@@ -50,6 +51,10 @@ urlpatterns = [
     path('auth/login/',         LoginView.as_view(),         name='login'),
     path('auth/token/refresh/', TokenRefreshView.as_view(),  name='token_refresh'),
     path('auth/me/',            MeView.as_view(),            name='me'),
+
+    # ── Password Reset ───────────────────────────────────────────────────────
+    path('auth/password-reset/', PasswordResetRequestView.as_view(), name='password_reset'),
+    path('auth/password-reset-confirm/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
 
     # ── Dashboards ───────────────────────────────────────────────────────────
     path('dashboard/student/',  StudentDashboardView.as_view(),  name='dashboard-student'),

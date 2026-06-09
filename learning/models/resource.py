@@ -56,18 +56,38 @@ class TeacherResource(models.Model):
         choices=RESOURCE_TYPE_CHOICES,
         default='pdf',
     )
+    media_file = models.ForeignKey(
+        'MediaFile',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='resources',
+        help_text='Archivo gestionado por la plataforma',
+    )
     file_url     = models.URLField(
-        help_text='URL del archivo (S3, Cloudinary, Google Drive, etc.)',
+        null=True,
+        blank=True,
+        help_text='URL externa o de intercambio; no requerido si se utiliza media_file',
+    )
+    external_url = models.URLField(
+        null=True,
+        blank=True,
+        help_text='Enlace externo independiente del archivo (solo para recursos tipo link)',
     )
     is_public    = models.BooleanField(
         default=True,
         help_text='True = visible para todos los estudiantes; False = solo para el aula asignada',
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text='False = recurso desactivado sin borrado físico',
     )
     created_at   = models.DateTimeField(auto_now_add=True)
     updated_at   = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [models.Index(fields=['resource_type']), models.Index(fields=['is_public']), models.Index(fields=['is_active'])]
 
     def __str__(self):
         course_str = f' [{self.course.title}]' if self.course else ''
