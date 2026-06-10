@@ -9,6 +9,9 @@ Signals — Lógica automática de gamificación
 
 2. on_stats_updated:
    - Cuando XP cambia, verifica logros y desbloquea automáticamente.
+
+3. notify_new_lesson:
+   - Envía correo cuando se crea una lección nueva a estudiantes del curso.
 """
 
 from django.db.models.signals import post_save
@@ -121,44 +124,22 @@ def notify_new_lesson(sender, instance, created, **kwargs):
         from learning.models import UserProgress, User
         from learning.services.email_service import send_custom_email
         from django.conf import settings
-        
+
         course = instance.module.course
-        
+
         # Obtener IDs de estudiantes que ya tienen progreso en este curso
         student_ids = UserProgress.objects.filter(
             lesson__module__course=course
         ).values_list('user_id', flat=True).distinct()
-        
+
         students = User.objects.filter(id__in=student_ids, is_active=True)
-        
+
         subject = f"¡Nueva lección en {course.title}!"
         message = f"Se ha añadido una nueva lección: '{instance.title}'. ¡Ven a verla y sigue aprendiendo!"
         action_url = f"{settings.FRONTEND_URL}/courses/{course.id}"
-        
+
         for student in students:
             try:
                 send_custom_email(student, subject, message, action_url, "Ver lección")
             except Exception:
                 pass
-    from learning.models import Achievement, UserAchievement
-
-    user = instance.user
-    current_xp = instance.total_xp
-
-    # Logros que el usuario AÚN NO tiene y cuyo required_xp <= current_xp
-    unlocked_ids = set(
-        UserAchievement.objects.filter(user=user).values_list('achievement_id', flat=True)
-    )
-
-    new_achievements = Achievement.objects.filter(
-        required_xp__lte=current_xp
-    ).exclude(id__in=unlocked_ids)
-
-    # Crear UserAchievement para cada logro nuevo
-    new_records = [
-        UserAchievement(user=user, achievement=achievement)
-        for achievement in new_achievements
-    ]
-
-    if new_records:
-        UserAchievement.objects.bulk_create(new_records, ignore_conflicts=True)
