@@ -7,7 +7,7 @@ from .classroom import Classroom, ClassroomEnrollment
 from .certificate import Certificate
 from .resource import TeacherResource
 from .media_file import MediaFile
-from .email_log import EmailLog
+from .email_log import EmailLog, BroadcastEmail
 
 __all__ = [
     # Constantes de roles
@@ -27,4 +27,5 @@ __all__ = [
     'TeacherResource',
     'MediaFile',
     'EmailLog',
+    'BroadcastEmail',
 ]

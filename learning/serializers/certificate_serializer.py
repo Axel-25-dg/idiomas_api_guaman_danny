@@ -60,8 +60,17 @@ class CertificateCreateSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        from learning.services.email_service import send_certificate_email
         validated_data['issued_by'] = self.context['request'].user
-        return super().create(validated_data)
+        instance = super().create(validated_data)
+        
+        # Enviar correo si el estado es 'issued'
+        if instance.status == 'issued':
+            try:
+                send_certificate_email(instance.student, instance)
+            except Exception:
+                pass
+        return instance
 
 
 class CertificateIssueSerializer(serializers.Serializer):
@@ -73,8 +82,16 @@ class CertificateIssueSerializer(serializers.Serializer):
 
     def save(self, instance, **kwargs):
         from django.utils import timezone
+        from learning.services.email_service import send_certificate_email
         instance.status    = 'issued'
         instance.issued_at = self.validated_data.get('issued_at') or timezone.now()
         instance.issued_by = self.context['request'].user
         instance.save(update_fields=['status', 'issued_at', 'issued_by'])
+        
+        # Enviar correo al emitir
+        try:
+            send_certificate_email(instance.student, instance)
+        except Exception:
+            pass
+            
         return instance

@@ -1,6 +1,20 @@
 {% extends 'emails/email_base.html' %}
 {% block content %}
-<p>Hola {{ user.username }},</p>
-<p>Bienvenido a la plataforma de idiomas. Ya puedes comenzar tu aprendizaje con nuestros cursos y recursos.</p>
-<p>Si necesitas ayuda, responde a este correo y te apoyaremos.</p>
+<p>Hola <strong>{{ user.username }}</strong>,</p>
+<p>¡Bienvenido a <strong>JumpUp UTE</strong>! Estamos muy emocionados de que hayas decidido unirte a nuestra comunidad de aprendizaje de idiomas.</p>
+<p>Nuestra plataforma está diseñada para ayudarte a alcanzar tus metas lingüísticas de una manera interactiva y efectiva. Ya puedes comenzar a explorar nuestros cursos y recursos exclusivos.</p>
+
+<div class="button-container">
+    <a href="{{ frontend_url }}/login" class="button">Empezar a Aprender</a>
+</div>
+
+<p>Aquí tienes algunas cosas que puedes hacer ahora mismo:</p>
+<ul style="color: #4a5568; line-height: 1.8;">
+    <li>Completar tu perfil con una foto personalizada.</li>
+    <li>Explorar los cursos disponibles según tu nivel (A1 - C2).</li>
+    <li>Realizar tus primeros ejercicios y ganar puntos de experiencia (XP).</li>
+</ul>
+
+<p>Si tienes alguna duda durante tu proceso, nuestro equipo de soporte está aquí para ayudarte.</p>
+<p>¡Mucho éxito en tu camino hacia el dominio de un nuevo idioma!</p>
 {% endblock %}

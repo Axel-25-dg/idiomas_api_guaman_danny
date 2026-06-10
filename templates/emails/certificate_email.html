@@ -1,10 +1,18 @@
 {% extends 'emails/email_base.html' %}
 {% block content %}
-<p>Hola {{ user.username }},</p>
-<p>Tu certificado <strong>{{ certificate.title }}</strong> ha sido emitido con éxito.</p>
-{% if download_link %}
-<p>Puedes descargarlo aquí:</p>
-<p><a href="{{ download_link }}" class="button">Ver certificado</a></p>
-{% endif %}
-<p>Gracias por tu esfuerzo en el aprendizaje.</p>
+<p>Hola <strong>{{ user.username }}</strong>,</p>
+<p>¡Felicidades por este gran logro! Tu dedicación ha dado sus frutos y ya tienes disponible tu certificado oficial de <strong>JumpUp UTE</strong>.</p>
+
+<div style="background-color: #f0fff4; border: 1px solid #c6f6d5; padding: 20px; border-radius: 8px; text-align: center; margin: 25px 0;">
+    <h2 style="color: #2f855a; margin-top: 0;">{{ certificate.title }}</h2>
+    <p style="margin-bottom: 0; color: #38a169;">Emitido el {{ certificate.issued_at|date:"d/m/Y" }}</p>
+</div>
+
+<p>Este certificado es un testimonio de tu esfuerzo y dominio del idioma. Puedes descargarlo, imprimirlo o compartirlo en tus redes profesionales.</p>
+
+<div class="button-container">
+    <a href="{{ frontend_url }}/certificates" class="button">Ver mi Certificado</a>
+</div>
+
+<p>Sigue adelante, ¡el aprendizaje nunca se detiene!</p>
 {% endblock %}

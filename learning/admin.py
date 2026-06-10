@@ -1,7 +1,10 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.html import format_html
 from django.db.models import Count, Sum
+from django.shortcuts import render
+from django.http import HttpResponseRedirect
+from django import forms
 
 from learning.models import (
     Role, User, UserProfile,
@@ -11,7 +14,18 @@ from learning.models import (
     Classroom, ClassroomEnrollment,
     Certificate,
     TeacherResource,
+    EmailLog,
+    BroadcastEmail,
 )
+from learning.services.email_service import send_custom_email, send_broadcast_email
+
+# ─── Formularios personalizados para el Admin ────────────────────────────────
+
+class SendEmailForm(forms.Form):
+    subject = forms.CharField(label="Asunto", max_length=200, widget=forms.TextInput(attrs={'style': 'width: 100%;'}))
+    message = forms.CharField(label="Mensaje", widget=forms.Textarea(attrs={'rows': 10, 'style': 'width: 100%;'}))
+    action_url = forms.URLField(label="URL del botón (Opcional)", required=False, widget=forms.URLInput(attrs={'style': 'width: 100%;'}))
+    action_text = forms.CharField(label="Texto del botón (Opcional)", required=False, max_length=50, widget=forms.TextInput(attrs={'style': 'width: 100%;'}))
 
 # ─── Configuración general del sitio admin ────────────────────────────────────
 admin.site.site_header  = "JumpUp UTE — Administración"
@@ -58,6 +72,37 @@ class UserAdmin(BaseUserAdmin):
         ('Rol y acceso', {'fields': ('role', 'created_at')}),
     )
     # Al cambiar el role, los flags se sincronizan en User.save()
+    actions = ['send_custom_email_action']
+
+    def send_custom_email_action(self, request, queryset):
+        if 'apply' in request.POST:
+            form = SendEmailForm(request.POST)
+            if form.is_valid():
+                subject = form.cleaned_data['subject']
+                message = form.cleaned_data['message']
+                action_url = form.cleaned_data['action_url']
+                action_text = form.cleaned_data['action_text']
+                
+                count = 0
+                for user in queryset:
+                    try:
+                        send_custom_email(user, subject, message, action_url, action_text)
+                        count += 1
+                    except Exception:
+                        pass
+                
+                self.message_user(request, f"Se han enviado {count} correos personalizados.")
+                return HttpResponseRedirect(request.get_full_path())
+        else:
+            form = SendEmailForm()
+
+        return render(
+            request,
+            'admin/send_email_form.html',
+            context={'users': queryset, 'form': form}
+        )
+    
+    send_custom_email_action.short_description = "Enviar correo personalizado"
 
     def role_badge(self, obj):
         colors = {
@@ -503,3 +548,30 @@ class TeacherResourceAdmin(admin.ModelAdmin):
             color, obj.get_resource_type_display().upper()
         )
     resource_type_badge.short_description = 'Tipo'
+
+
+@admin.register(EmailLog)
+class EmailLogAdmin(admin.ModelAdmin):
+    list_display = ['id', 'recipient', 'subject', 'status', 'sent_at']
+    list_filter  = ['status', 'template_name']
+    search_fields = ['recipient', 'subject']
+    readonly_fields = ['sent_at', 'created_at']
+
+
+@admin.register(BroadcastEmail)
+class BroadcastEmailAdmin(admin.ModelAdmin):
+    list_display = ['id', 'subject', 'audience', 'sent_count', 'is_sent', 'sent_at']
+    list_filter  = ['audience', 'is_sent']
+    search_fields = ['subject', 'message']
+    readonly_fields = ['sent_count', 'is_sent', 'sent_at']
+    actions = ['execute_broadcast']
+
+    def execute_broadcast(self, request, queryset):
+        for broadcast in queryset:
+            if not broadcast.is_sent:
+                count = send_broadcast_email(broadcast)
+                self.message_user(request, f"Envío masivo '{broadcast.subject}' completado: {count} correos enviados.")
+            else:
+                self.message_user(request, f"El envío '{broadcast.subject}' ya fue procesado anteriormente.", messages.WARNING)
+    
+    execute_broadcast.short_description = "Ejecutar envío masivo ahora"

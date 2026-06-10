@@ -154,3 +154,66 @@ def send_subscription_expiration(user, subscription, expiration_date):
         template_name='emails/subscription_expiration_email.html',
         context=context,
     )
+
+
+def send_custom_email(user, subject, message, action_url=None, action_text=None):
+    """
+    Envía un correo personalizado a un usuario.
+    """
+    context = {
+        'user': user,
+        'subject': subject,
+        'message': message,
+        'action_url': action_url,
+        'action_text': action_text,
+    }
+    return _send_email(
+        recipient=user.email,
+        subject=subject,
+        template_name='emails/custom_email.html',
+        context=context,
+    )
+
+
+def send_broadcast_email(broadcast):
+    """
+    Envía un objeto BroadcastEmail a su audiencia definida.
+    """
+    from learning.models import User, ROLE_STUDENT, ROLE_TEACHER, ROLE_ADMIN, UserProgress
+    from django.utils.timezone import now
+
+    # Definir audiencia
+    users = User.objects.filter(is_active=True)
+    
+    if broadcast.audience == 'students':
+        users = users.filter(role__name=ROLE_STUDENT)
+    elif broadcast.audience == 'teachers':
+        users = users.filter(role__name=ROLE_TEACHER)
+    elif broadcast.audience == 'course' and broadcast.target_course:
+        # Usuarios que tienen progreso en este curso (estudiantes inscritos)
+        student_ids = UserProgress.objects.filter(
+            lesson__module__course=broadcast.target_course
+        ).values_list('user_id', flat=True).distinct()
+        users = users.filter(id__in=student_ids)
+
+    count = 0
+    for user in users:
+        try:
+            send_custom_email(
+                user, 
+                broadcast.subject, 
+                broadcast.message, 
+                broadcast.action_url, 
+                broadcast.action_text
+            )
+            count += 1
+        except Exception as e:
+            logger.error(f"Error en envío masivo a {user.email}: {e}")
+
+    # Actualizar estado del broadcast
+    broadcast.is_sent = True
+    broadcast.sent_count = count
+    broadcast.sent_at = now()
+    broadcast.save(update_fields=['is_sent', 'sent_count', 'sent_at'])
+    
+    return count

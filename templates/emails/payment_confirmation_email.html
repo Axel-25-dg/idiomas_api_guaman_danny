@@ -1,7 +1,31 @@
 {% extends 'emails/email_base.html' %}
 {% block content %}
-<p>Hola {{ user.username }},</p>
-<p>Hemos recibido tu pago por <strong>${{ payment.amount }}</strong>.</p>
-<p>Estado de la transacción: <strong>{{ payment.status }}</strong>.</p>
-<p>Gracias por seguir con nosotros.</p>
+<p>Hola <strong>{{ user.username }}</strong>,</p>
+<p>¡Gracias por tu confianza! Confirmamos que hemos recibido correctamente el pago de tu suscripción en <strong>JumpUp UTE</strong>.</p>
+
+<div style="background-color: #f7fafc; border: 1px solid #edf2f7; padding: 25px; border-radius: 8px; margin: 25px 0;">
+    <h3 style="margin-top: 0; color: #2d3748; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">Resumen de la Transacción</h3>
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 8px 0; color: #718096;">Monto:</td>
+            <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #2d3748;">${{ payment.amount|default:payment.total_amount }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; color: #718096;">Estado:</td>
+            <td style="padding: 8px 0; text-align: right; color: #38a169; font-weight: bold;">{{ payment.status|upper }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; color: #718096;">Fecha:</td>
+            <td style="padding: 8px 0; text-align: right; color: #2d3748;">{{ payment.created_at|date:"d/m/Y H:i" }}</td>
+        </tr>
+    </table>
+</div>
+
+<p>Tu acceso a los contenidos premium ya está activo. Sigue aprendiendo y aprovechando todas nuestras herramientas.</p>
+
+<div class="button-container">
+    <a href="{{ frontend_url }}/dashboard" class="button">Ir a mi Dashboard</a>
+</div>
+
+<p>Si tienes alguna duda sobre tu facturación, no dudes en contactarnos.</p>
 {% endblock %}

@@ -100,6 +100,48 @@ def on_stats_updated(sender, instance, **kwargs):
     """
     from learning.models import Achievement, UserAchievement
 
+    # Obtener logros que el usuario aún no tiene
+    achieved_ids = UserAchievement.objects.filter(user=instance.user).values_list('achievement_id', flat=True)
+    available = Achievement.objects.filter(is_active=True).exclude(id__in=achieved_ids)
+
+    for achievement in available:
+        if instance.total_xp >= achievement.required_xp:
+            UserAchievement.objects.create(
+                user=instance.user,
+                achievement=achievement
+            )
+
+
+@receiver(post_save, sender='learning.Lesson')
+def notify_new_lesson(sender, instance, created, **kwargs):
+    """
+    Notifica a todos los estudiantes inscritos en un curso cuando se añade una nueva lección.
+    """
+    if created:
+        from learning.models import UserProgress, User
+        from learning.services.email_service import send_custom_email
+        from django.conf import settings
+        
+        course = instance.module.course
+        
+        # Obtener IDs de estudiantes que ya tienen progreso en este curso
+        student_ids = UserProgress.objects.filter(
+            lesson__module__course=course
+        ).values_list('user_id', flat=True).distinct()
+        
+        students = User.objects.filter(id__in=student_ids, is_active=True)
+        
+        subject = f"¡Nueva lección en {course.title}!"
+        message = f"Se ha añadido una nueva lección: '{instance.title}'. ¡Ven a verla y sigue aprendiendo!"
+        action_url = f"{settings.FRONTEND_URL}/courses/{course.id}"
+        
+        for student in students:
+            try:
+                send_custom_email(student, subject, message, action_url, "Ver lección")
+            except Exception:
+                pass
+    from learning.models import Achievement, UserAchievement
+
     user = instance.user
     current_xp = instance.total_xp
 

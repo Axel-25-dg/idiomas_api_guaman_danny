@@ -44,5 +44,14 @@ class PaymentSerializer(serializers.ModelSerializer):
         read_only_fields = ['user', 'transaction_date']
 
     def create(self, validated_data):
+        from learning.services.email_service import send_payment_confirmation
         validated_data['user'] = self.context['request'].user
-        return super().create(validated_data)
+        instance = super().create(validated_data)
+        
+        # Enviar correo de confirmación
+        if instance.status == 'approved':
+            try:
+                send_payment_confirmation(instance.user, instance)
+            except Exception:
+                pass
+        return instance
