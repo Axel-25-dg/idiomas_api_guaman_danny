@@ -12,6 +12,7 @@ from .activities import UserActivityLog, UserFavorite
 from .reports import Report, MediaAsset
 from .feedback import UserFeedback
 from .notifications import Announcement, Notification, UserNotificationPreference
+from .maintenance import MaintenanceLog, BackupHistory
 
 
 
@@ -42,4 +43,5 @@ __all__ = [
     'Announcement', 
     'Notification', 
     'UserNotificationPreference',
+    'MaintenanceLog', 'BackupHistory',
 ]

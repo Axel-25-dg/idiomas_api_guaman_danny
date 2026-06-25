@@ -15,3 +15,7 @@ from .classroom_views import ClassroomViewSet
 from .certificate_views import CertificateViewSet
 from .resource_views import TeacherResourceViewSet
 from .dashboard_views import StudentDashboardView, TeacherDashboardView, AdminDashboardView
+
+from .interaction_views import ReportViewSet,UserFeedbackViewSet, MediaAssetViewSet, UserFavoriteViewSet, UserActivityLogViewSet
+from .notification_views import NotificationViewSet, UserNotificationPreferenceViewSet, AnnouncementViewSet
+from .system_views import MaintenanceLogViewSet, BackupHistoryViewSet
