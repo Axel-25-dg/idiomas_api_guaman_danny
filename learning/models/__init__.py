@@ -8,7 +8,6 @@ from .certificate import Certificate
 from .resource import TeacherResource
 from .media_file import MediaFile
 from .email_log import EmailLog, BroadcastEmail
-from .maintenance import MaintenanceLog, BackupHistory
 from .activities import UserActivityLog, UserFavorite
 from .reports import Report, MediaAsset
 from .feedback import UserFeedback
@@ -37,7 +36,6 @@ __all__ = [
     'EmailLog',
     'BroadcastEmail',
     # Bloque: Mantenimiento y Actividades
-    'MaintenanceLog', 'BackupHistory',
     'UserActivityLog', 'UserFavorite',
     'Report', 'MediaAsset',
     'UserFeedback',
