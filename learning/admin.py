@@ -16,6 +16,10 @@ from learning.models import (
     TeacherResource,
     EmailLog,
     BroadcastEmail,
+    #nuevos modelos
+    MaintenanceLog, BackupHistory, UserActivityLog, UserFavorite,
+    Report, UserFeedback, MediaAsset, Announcement, 
+    Notification, UserNotificationPreference
 )
 from learning.services.email_service import send_custom_email, send_broadcast_email
 
@@ -575,3 +579,73 @@ class BroadcastEmailAdmin(admin.ModelAdmin):
                 self.message_user(request, f"El envío '{broadcast.subject}' ya fue procesado anteriormente.", messages.WARNING)
     
     execute_broadcast.short_description = "Ejecutar envío masivo ahora"
+
+
+
+
+
+# ─── REPORTES Y FEEDBACK ──────────────────────────────────────────
+
+@admin.register(Report)
+class ReportAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'report_type', 'status', 'created_at']
+    list_filter = ['status', 'report_type']
+    search_fields = ['user__email', 'description']
+
+@admin.register(MediaAsset)
+class MediaAssetAdmin(admin.ModelAdmin):
+    list_display = ['id', 'file_name', 'file_type', 'uploaded_by', 'created_at']
+
+@admin.register(UserFeedback)
+class UserFeedbackAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'subject', 'status', 'created_at']
+    list_filter = ['status']
+    search_fields = ['subject', 'message']
+
+@admin.register(UserActivityLog)
+class UserActivityLogAdmin(admin.ModelAdmin):
+    # Corregido: usando los campos existentes en el modelo
+    list_display = ['id', 'user', 'module', 'lesson', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['user__email']
+
+@admin.register(UserFavorite)
+class UserFavoriteAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'course', 'lesson', 'created_at']
+    search_fields = ['user__email']
+
+
+
+# ─── NOTIFICACIONES Y ANUNCIOS ──────────────────────────────────────
+
+@admin.register(Announcement)
+class AnnouncementAdmin(admin.ModelAdmin):
+    list_display = ['id', 'title', 'start_date', 'end_date', 'is_active']
+    list_filter = ['is_active']
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'title', 'is_read', 'created_at']
+    list_filter = ['is_read']
+    search_fields = ['user__email', 'title']
+
+@admin.register(UserNotificationPreference)
+class UserNotificationPreferenceAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'email_notifications', 'app_notifications', 'sms_notifications']
+    search_fields = ['user__email']
+
+
+# ─── MANTENIMIENTO Y ACTIVIDAD ──────────────────────────────────────
+
+@admin.register(MaintenanceLog)
+class MaintenanceLogAdmin(admin.ModelAdmin):
+    # Corregido: 'performed_by'
+    list_display = ['id', 'performed_by', 'status', 'created_at']
+    list_filter = ['status']
+    search_fields = ['description']
+
+@admin.register(BackupHistory)
+class BackupHistoryAdmin(admin.ModelAdmin):
+    list_display = ['id', 'backup_name', 'size', 'created_at']
+    readonly_fields = ['created_at']
+
