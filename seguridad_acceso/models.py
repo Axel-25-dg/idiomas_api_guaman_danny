@@ -30,3 +30,20 @@ class LoginAttempt(models.Model):
 
     def __str__(self):
         return f"Login Attempt for {self.email} from {self.ip_address}"
+
+class ActiveSession(models.Model):
+    id = models.CharField(max_length=255, primary_key=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='active_sessions')
+    device_name = models.CharField(max_length=100)
+    browser = models.CharField(max_length=50)
+    ip_address = models.GenericIPAddressField()
+    last_activity = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'active_sessions'
+        verbose_name = 'Active Session'
+        verbose_name_plural = 'Active Sessions'
+
+    def __str__(self):
+        return f"Session for {self.user} on {self.device_name}"
