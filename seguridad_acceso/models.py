@@ -114,3 +114,18 @@ class BlockedIp(models.Model):
 
     def __str__(self):
         return f"{self.ip_address} - {self.reason}"
+
+class ApiToken(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='api_tokens')
+    token = models.CharField(max_length=64, unique=True)
+    expires_at = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'api_tokens'
+        verbose_name = 'API Token'
+        verbose_name_plural = 'API Tokens'
+
+    def __str__(self):
+        return f"Token for {self.user} (Active: {self.is_active})"
