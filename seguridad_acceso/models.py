@@ -47,3 +47,24 @@ class ActiveSession(models.Model):
 
     def __str__(self):
         return f"Session for {self.user} on {self.device_name}"
+
+class SecurityAlert(models.Model):
+    SEVERITY_CHOICES = [
+        ('LOW', 'Low'),
+        ('MEDIUM', 'Medium'),
+        ('HIGH', 'High'),
+        ('CRITICAL', 'Critical'),
+    ]
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True, related_name='security_alerts')
+    alert_type = models.CharField(max_length=50)
+    description = models.TextField()
+    severity = models.CharField(max_length=15, choices=SEVERITY_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'security_alerts'
+        verbose_name = 'Security Alert'
+        verbose_name_plural = 'Security Alerts'
+
+    def __str__(self):
+        return f"[{self.severity}] {self.alert_type}"
