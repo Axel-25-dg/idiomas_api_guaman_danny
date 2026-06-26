@@ -14,3 +14,11 @@ class UserLocationAdmin(admin.ModelAdmin):
     list_display = ('city', 'country', 'user', 'created_at')
     search_fields = ('city', 'country', 'user__username', 'user__email')
     list_filter = ('country', 'created_at')
+
+from .models import SecurityAlert
+
+@admin.register(SecurityAlert)
+class SecurityAlertAdmin(admin.ModelAdmin):
+    list_display = ('alert_type', 'severity', 'user', 'created_at')
+    search_fields = ('alert_type', 'description', 'user__username', 'user__email')
+    list_filter = ('severity', 'created_at')
