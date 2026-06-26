@@ -100,3 +100,17 @@ class UserLocation(models.Model):
 
     def __str__(self):
         return f"{self.city}, {self.country} ({self.user})"
+
+class BlockedIp(models.Model):
+    ip_address = models.GenericIPAddressField(unique=True)
+    reason = models.CharField(max_length=255)
+    blocked_until = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'blocked_ips'
+        verbose_name = 'Blocked IP'
+        verbose_name_plural = 'Blocked IPs'
+
+    def __str__(self):
+        return f"{self.ip_address} - {self.reason}"
