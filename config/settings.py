@@ -26,6 +26,7 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     'learning',
+    'dispositivos_alerts',
     'seguridad_acceso',
 ]
 
