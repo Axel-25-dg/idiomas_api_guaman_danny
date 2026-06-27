@@ -28,3 +28,20 @@ from .certificate_serializer import (
     CertificateSerializer, CertificateCreateSerializer, CertificateIssueSerializer,
 )
 from .resource_serializer import TeacherResourceSerializer
+
+from .interaction_serializers import (
+    UserFavoriteSerializer, 
+    UserFeedbackSerializer,
+    MediaAssetSerializer,
+    ReportSerializer,
+    UserActivityLogSerializer,
+)
+from .notification_serializers import (
+    AnnouncementSerializer, 
+    NotificationSerializer,
+    UserNotificationPreferenceSerializer,
+)
+from .system_serializers import (
+    MaintenanceLogSerializer,
+    BackupHistorySerializer,        
+)
