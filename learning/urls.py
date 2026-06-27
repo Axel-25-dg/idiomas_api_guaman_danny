@@ -1,7 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
-
 from learning.views import (
     RegisterView, LoginView, MeView,
     PasswordResetRequestView, PasswordResetConfirmView,
@@ -12,7 +11,15 @@ from learning.views import (
     StaffUserViewSet, AdminStudentViewSet,
     ClassroomViewSet, CertificateViewSet, TeacherResourceViewSet,
     StudentDashboardView, TeacherDashboardView, AdminDashboardView,
+
+    # Vistas de interacción
+    ReportViewSet, UserFeedbackViewSet, MediaAssetViewSet, UserFavoriteViewSet, UserActivityLogViewSet,
+    # Vistas de notificación
+    AnnouncementViewSet, NotificationViewSet, UserNotificationPreferenceViewSet,
+    # Vistas de sistema
+    MaintenanceLogViewSet, BackupHistoryViewSet, 
 )
+from learning.views import system_views, interaction_views, notification_views
 
 router = DefaultRouter()
 
@@ -44,6 +51,21 @@ router.register(r'admin-students',  AdminStudentViewSet, basename='admin-student
 router.register(r'classrooms',   ClassroomViewSet,       basename='classroom')
 router.register(r'certificates', CertificateViewSet,     basename='certificate')
 router.register(r'resources',    TeacherResourceViewSet, basename='resource')
+
+# ── Sistema, Notificaciones e Interacciones ──────────────────────────────────
+router.register(r'announcements', AnnouncementViewSet, basename='announcement')
+router.register(r'notifications', NotificationViewSet, basename='notification')
+router.register(r'preferences',   UserNotificationPreferenceViewSet, basename='preference')
+
+router.register(r'maintenance',   MaintenanceLogViewSet, basename='maintenance')
+router.register(r'backups',       BackupHistoryViewSet, basename='backup')
+
+router.register(r'favorites', UserFavoriteViewSet, basename='favorite')
+router.register(r'reports',   ReportViewSet,       basename='report')
+router.register(r'feedbacks', UserFeedbackViewSet, basename='feedback')
+router.register(r'media',     MediaAssetViewSet,   basename='media')
+router.register(r'activity-logs', UserActivityLogViewSet, basename='activity-log')
+
 
 urlpatterns = [
     # ── Autenticación ────────────────────────────────────────────────────────

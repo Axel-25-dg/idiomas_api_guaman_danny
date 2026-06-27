@@ -26,7 +26,8 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     'learning',
-    'dispositivos_alertas',
+    'dispositivos_alerts',
+    'seguridad_acceso',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
