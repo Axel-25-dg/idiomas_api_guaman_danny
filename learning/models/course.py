@@ -156,7 +156,7 @@ class Exercise(models.Model):
         ordering = ['lesson', 'id']
         constraints = [
             models.CheckConstraint(
-                check=models.Q(exercise_type__in=[choice[0] for choice in EXERCISE_TYPE_CHOICES]),
+                condition=models.Q(exercise_type__in=['multiple_choice', 'translate', 'listen', 'fill_blank', 'match']),
                 name='valid_exercise_type',
             ),
         ]
