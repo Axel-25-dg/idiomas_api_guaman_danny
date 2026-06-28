@@ -30,10 +30,10 @@ Desarrollado con Django REST Framework + PostgreSQL
 | Campo | Detalle |
 |---|---|
 | **Proyecto** | JumpUp UTE — Plataforma de Aprendizaje de Idiomas |
-| **Integrante** | Danny Alexander Guamán Pillajo |
+| **Integrantes** | Danny Guamán, Alex Macias, Ariel Paucar |
 | **Carrera** | Ingeniería en Desarrollo de Software |
 | **Universidad** | Universidad Tecnológica Equinoccial (UTE) |
-| **Materia** | Seminario de Integración — Módulo 2 |
+| **Materia** | Seminario de Integración |
 | **Repositorio** | https://github.com/Axel-25-dg/idiomas_api_guaman_danny |
 | **URL Pública** | https://guaman-idiomas-ute.online |
 | **Documentación API** | https://guaman-idiomas-ute.online/api/docs/ |
@@ -383,8 +383,6 @@ python manage.py test learning --verbosity=2
 ## Autor
 
 <div align="center">
-
-**Danny Alexander Guamán Pillajo**
 
 Universidad Tecnológica Equinoccial — UTE
 
