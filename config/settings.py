@@ -22,6 +22,7 @@ THIRD_PARTY_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'django_filters',
+    'drf_spectacular',
 ]
 
 LOCAL_APPS = [
@@ -147,6 +148,38 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+# ─── DRF Spectacular (Swagger / Redoc) ───────────────────────────────────────
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'JumpUp UTE — API de Aprendizaje de Idiomas',
+    'DESCRIPTION': 'API REST completa para plataforma educativa con cursos, gamificación, '
+                   'clases virtuales, certificados y suscripciones. '
+                   'Desarrollada con Django REST Framework + PostgreSQL.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'CONTACT': {'name': 'Danny Guamán', 'email': 'alexander18br17@gmail.com'},
+    'LICENSE': {'name': 'MIT'},
+    'TAGS': [
+        {'name': 'Auth', 'description': 'Registro, login, refresh y perfil'},
+        {'name': 'Users', 'description': 'Gestión de usuarios (admin)'},
+        {'name': 'Languages', 'description': 'Idiomas disponibles'},
+        {'name': 'Courses', 'description': 'Cursos por idioma y nivel'},
+        {'name': 'Modules', 'description': 'Módulos dentro de un curso'},
+        {'name': 'Lessons', 'description': 'Lecciones y exámenes'},
+        {'name': 'Exercises', 'description': 'Ejercicios por lección'},
+        {'name': 'Progress', 'description': 'Progreso del estudiante'},
+        {'name': 'Stats', 'description': 'XP, rachas y niveles'},
+        {'name': 'Achievements', 'description': 'Logros y gamificación'},
+        {'name': 'Ranking', 'description': 'Top usuarios por XP'},
+        {'name': 'Classrooms', 'description': 'Clases virtuales con código'},
+        {'name': 'Resources', 'description': 'Materiales del profesor'},
+        {'name': 'Certificates', 'description': 'Certificados A1-C2'},
+        {'name': 'Subscriptions', 'description': 'Planes premium'},
+        {'name': 'Payments', 'description': 'Pagos y órdenes'},
+        {'name': 'Dashboard', 'description': 'Resúmenes por rol'},
     ],
 }
 

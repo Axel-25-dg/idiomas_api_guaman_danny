@@ -5,348 +5,82 @@
 <br/>
 <br/>
 
-# JumpUp UTE — LanguageAPI
+# JumpUp UTE — API de Aprendizaje de Idiomas
 
-**Backend REST para Plataforma de Aprendizaje de Idiomas**
+**Backend REST para Plataforma Educativa de Idiomas**
 
-Desarrollado con Django y Django REST Framework
+Desarrollado con Django REST Framework + PostgreSQL
 
 <br/>
 
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Django](https://img.shields.io/badge/Django-4.2+-092E20?style=for-the-badge&logo=django&logoColor=white)
-![DRF](https://img.shields.io/badge/Django_REST_Framework-3.14+-ff1709?style=for-the-badge&logo=django&logoColor=white)
+![DRF](https://img.shields.io/badge/DRF-3.14+-ff1709?style=for-the-badge&logo=django&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791?style=for-the-badge&logo=postgresql&logoColor=white)
-![JWT](https://img.shields.io/badge/JWT-Authentication-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-Auth-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
+![Swagger](https://img.shields.io/badge/Swagger-Docs-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)
 ![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
 
 </div>
 
 ---
 
-## Tabla de Contenido
+## Información General
 
-- [Descripción](#descripción)
-- [Arquitectura del Proyecto](#arquitectura-del-proyecto)
-- [Sistema de Roles y Permisos](#sistema-de-roles-y-permisos)
-- [Modelo de Base de Datos](#modelo-de-base-de-datos)
-- [Endpoints de la API](#endpoints-de-la-api)
-- [Panel de Administración Django](#panel-de-administración-django)
-- [Tecnologías](#tecnologías)
-- [Instalación](#instalación)
-- [Deploy con GitHub Actions](#deploy-con-github-actions)
-- [Testing](#testing)
-- [Autor](#autor)
-
----
-
-## Descripción
-
-**JumpUp UTE** es un backend REST completo para una plataforma de aprendizaje de idiomas inspirada en Duolingo y Babbel. Construido con Django y Django REST Framework, implementa autenticación JWT, un sistema de roles profesional y PostgreSQL como motor de base de datos.
-
-El sistema gestiona tres paneles independientes para Android:
-
-| Panel | Rol | Acceso |
-|---|---|---|
-| **Admin Dashboard** | `admin` | Gestión total: usuarios, suscripciones, estadísticas, configuración |
-| **Teacher Dashboard** | `teacher` | Contenido educativo: cursos, lecciones, ejercicios |
-| **Student Dashboard** | `student` | Aprendizaje: progreso, logros, suscripciones propias |
-
----
-
-## Arquitectura del Proyecto
-
-```
-aplicacionidion_idiomas_guaman_danny/
-│
-├── config/
-│   ├── settings.py             # JWT, CORS, base de datos, DRF config
-│   ├── urls.py                 # URLs raíz: /admin/, /api/
-│   ├── wsgi.py
-│   └── asgi.py
-│
-├── learning/                   # Aplicación principal
-│   │
-│   ├── models/
-│   │   ├── user.py             # Role, User (con sync_flags_from_role), UserProfile
-│   │   ├── language.py         # Language
-│   │   ├── course.py           # Course, Module, Lesson, Exercise
-│   │   ├── progress.py         # UserProgress, UserStats, Achievement, UserAchievement
-│   │   └── subscription.py     # Subscription, UserSubscription, Payment, Order
-│   │
-│   ├── serializers/
-│   │   ├── user_serializer.py  # Register, Login (con user en body), Me, StaffUser
-│   │   ├── course_serializer.py
-│   │   ├── progress_serializer.py
-│   │   ├── subscription_serializer.py
-│   │   └── order_serializer.py
-│   │
-│   ├── views/
-│   │   ├── auth_views.py       # RegisterView, LoginView, MeView
-│   │   ├── course_views.py     # Languages, Courses, Modules, Lessons, Exercises
-│   │   ├── progress_views.py   # Progress, Stats, Achievements
-│   │   ├── subscription_views.py  # Subscriptions, Payments, Orders
-│   │   └── user_views.py       # StaffUserViewSet (solo admin)
-│   │
-│   ├── migrations/
-│   │   ├── 0001_initial.py
-│   │   ├── 0002_order.py
-│   │   └── 0003_seed_roles_and_fix_users.py  # Seed roles + fix flags producción
-│   │
-│   ├── tests/
-│   │   ├── test_api.py                       # Tests originales (6 tests)
-│   │   └── test_roles_and_permissions.py     # Tests de roles/permisos (23 tests)
-│   │
-│   ├── admin.py                # Todos los modelos registrados en /admin/
-│   ├── urls.py                 # DefaultRouter + auth/me/
-│   ├── pagination.py           # 10 items/página, máx 100
-│   ├── permissions.py          # IsAdmin, IsTeacher, IsStudent, IsTeacherOrAdmin, etc.
-│   └── filters.py              # Filtros con django-filter
-│
-├── .github/workflows/
-│   └── deploy.yml              # CI/CD: push → SSH → migrate → restart gunicorn
-│
-├── manage.py
-├── requirements.txt
-├── .env.example
-└── README.md
-```
-
----
-
-## Sistema de Roles y Permisos
-
-### Arquitectura híbrida (role + is_staff + is_superuser)
-
-```
-ADMIN
-├── role.name    = "admin"
-├── is_staff     = True
-└── is_superuser = True
-
-TEACHER
-├── role.name    = "teacher"
-├── is_staff     = True
-└── is_superuser = False
-
-STUDENT
-├── role.name    = "student"
-├── is_staff     = False
-└── is_superuser = False
-```
-
-### Sincronización automática
-
-Cuando se asigna o cambia el `role` de un usuario, `User.save()` sincroniza automáticamente `is_staff` e `is_superuser`. No es necesario asignarlos manualmente.
-
-```python
-user.role = Role.objects.get(name='teacher')
-user.save()
-# → is_staff=True, is_superuser=False  (automático)
-```
-
-### Permisos disponibles
-
-| Permiso | Descripción |
+| Campo | Detalle |
 |---|---|
-| `IsAdmin` | Solo `role='admin'` (superusuario) |
-| `IsTeacher` | Solo `role='teacher'` |
-| `IsStudent` | Solo `role='student'` |
-| `IsTeacherOrAdmin` | Teacher o Admin |
-| `IsAdminOrReadOnly` | Escritura solo admin; lectura cualquier autenticado |
-| `IsTeacherOrAdminOrReadOnly` | Escritura teacher/admin; lectura cualquier autenticado |
+| **Proyecto** | JumpUp UTE — Plataforma de Aprendizaje de Idiomas |
+| **Integrante** | Danny Alexander Guamán Pillajo |
+| **Carrera** | Ingeniería en Desarrollo de Software |
+| **Universidad** | Universidad Tecnológica Equinoccial (UTE) |
+| **Materia** | Seminario de Integración — Módulo 2 |
+| **Repositorio** | https://github.com/Axel-25-dg/idiomas_api_guaman_danny |
+| **URL Pública** | https://guaman-idiomas-ute.online |
+| **Documentación API** | https://guaman-idiomas-ute.online/api/docs/ |
 
-### Tabla de acceso por endpoint
+---
 
-| Endpoint | Student | Teacher | Admin |
+## Descripción del Sistema
+
+JumpUp UTE es una API REST completa para una plataforma de aprendizaje de idiomas. Permite gestionar cursos por niveles MCER (A1-C2), gamificación con XP y logros, clases virtuales con código de acceso, certificados verificables, suscripciones y pagos. Implementa autenticación JWT con tres roles diferenciados (admin, teacher, student) y permisos granulares.
+
+---
+
+## Base de Datos — 20 Tablas
+
+| # | Modelo | Tabla | Relaciones |
 |---|---|---|---|
-| `GET /api/courses/` | ✅ | ✅ | ✅ |
-| `POST /api/courses/` | ❌ | ✅ | ✅ |
-| `POST /api/languages/` | ❌ | ❌ | ✅ |
-| `GET /api/users/` | ❌ | ❌ | ✅ |
-| `GET /api/orders/stats/` | ❌ | ❌ | ✅ |
-| `GET /api/progress/` | ✅ (propio) | ✅ (propio) | ✅ |
-| `GET /api/stats/` | ✅ (propio) | ✅ (propio) | ✅ |
+| 1 | Role | `learning_role` | OneToMany → User |
+| 2 | User | `learning_user` | FK → Role |
+| 3 | UserProfile | `learning_userprofile` | OneToOne → User |
+| 4 | Language | `learning_language` | OneToMany → Course |
+| 5 | Course | `learning_course` | FK → Language |
+| 6 | Module | `learning_module` | FK → Course |
+| 7 | Lesson | `learning_lesson` | FK → Module |
+| 8 | Exercise | `learning_exercise` | FK → Lesson |
+| 9 | UserProgress | `learning_userprogress` | FK → User, Lesson |
+| 10 | UserStats | `learning_userstats` | OneToOne → User |
+| 11 | Achievement | `learning_achievement` | — |
+| 12 | UserAchievement | `learning_userachievement` | FK → User, Achievement |
+| 13 | Subscription | `learning_subscription` | — |
+| 14 | UserSubscription | `learning_usersubscription` | FK → User, Subscription |
+| 15 | Payment | `learning_payment` | FK → User |
+| 16 | Order | `learning_order` | FK → User, Subscription |
+| 17 | Classroom | `learning_classroom` | FK → User(teacher), Course, M2M → User(students) |
+| 18 | ClassroomEnrollment | `learning_classroomenrollment` | FK → Classroom, User |
+| 19 | Certificate | `learning_certificate` | FK → User(student), User(issued_by) |
+| 20 | TeacherResource | `learning_teacherresource` | FK → User(teacher), Course, Lesson |
+
+**Relaciones implementadas:**
+- OneToOne: User ↔ UserProfile, User ↔ UserStats
+- OneToMany: Language → Course → Module → Lesson → Exercise
+- ManyToMany: Classroom ↔ Students (through ClassroomEnrollment)
 
 ---
 
-## Modelo de Base de Datos
-
-El sistema está compuesto por **16 modelos** organizados en 4 módulos.
-
-### Módulo de Usuarios y Autenticación
-
-| Modelo | Descripción |
-|---|---|
-| `Role` | Roles del sistema: `admin`, `teacher`, `student` |
-| `User` | Extiende AbstractUser. Login por email. Sincroniza flags desde role |
-| `UserProfile` | Perfil extendido: nombre, apellido, avatar, idioma nativo, zona horaria |
-
-### Módulo de Contenido Educativo
-
-| Modelo | Descripción |
-|---|---|
-| `Language` | Idiomas disponibles (Inglés, Francés, Alemán…) |
-| `Course` | Cursos por idioma y nivel MCER (A1 → C2) |
-| `Module` | Unidades dentro de un curso, con orden |
-| `Lesson` | Lecciones con tipo de contenido (video, text, audio, interactive) y XP |
-| `Exercise` | Ejercicios: opción múltiple, traducir, escuchar, completar, emparejar |
-
-### Módulo de Progreso y Gamificación
-
-| Modelo | Descripción |
-|---|---|
-| `UserProgress` | Estado por lección: `in_progress` / `completed`, score |
-| `UserStats` | XP total, racha actual, racha más larga |
-| `Achievement` | Logros con XP requerido para desbloquear |
-| `UserAchievement` | Logros desbloqueados por usuario |
-
-### Módulo de Pagos y Suscripciones
-
-| Modelo | Descripción |
-|---|---|
-| `Subscription` | Planes disponibles (nombre, precio, duración, beneficios) |
-| `UserSubscription` | Suscripción activa de un usuario con fechas |
-| `Payment` | Transacciones: monto, método, estado |
-| `Order` | Órdenes de compra vinculadas a un plan |
-
----
-
-## Endpoints de la API
-
-Base URL: `https://tu-servidor.com/api/`
-
-### Autenticación — Público
-
-| Método | Endpoint | Descripción |
-|---|---|---|
-| `POST` | `/api/auth/register/` | Registro. Asigna `role=student` automáticamente |
-| `POST` | `/api/auth/login/` | Login. Devuelve `access`, `refresh` y `user{}` |
-| `POST` | `/api/auth/token/refresh/` | Renovar access token |
-| `GET` | `/api/auth/me/` | 🆕 Datos del usuario autenticado (para validación Android) |
-
-**Response de login:**
-```json
-{
-  "access": "eyJ...",
-  "refresh": "eyJ...",
-  "user": {
-    "id": 1,
-    "username": "danny",
-    "email": "danny@email.com",
-    "role": "teacher",
-    "is_staff": true,
-    "is_superuser": false
-  }
-}
-```
-
-### Gestión de usuarios — Solo Admin
-
-| Método | Endpoint | Descripción |
-|---|---|---|
-| `GET` | `/api/users/` | Lista usuarios de personal (teachers y admins) |
-| `POST` | `/api/users/` | Crea teacher o admin. Flags se sincronizan por role |
-| `GET` | `/api/users/{id}/` | Detalle del usuario |
-| `PATCH` | `/api/users/{id}/` | Actualizar usuario (cambiar role sincroniza flags) |
-| `DELETE` | `/api/users/{id}/` | Eliminar usuario |
-
-### Contenido Educativo
-
-| Método | Endpoint | Acceso escritura | Descripción |
-|---|---|---|---|
-| `GET/POST` | `/api/languages/` | Admin | Idiomas |
-| `GET/POST` | `/api/courses/` | Teacher, Admin | Cursos |
-| `GET/POST` | `/api/modules/` | Teacher, Admin | Módulos |
-| `GET/POST` | `/api/lessons/` | Teacher, Admin | Lecciones |
-| `GET/POST` | `/api/exercises/` | Teacher, Admin | Ejercicios |
-
-**Filtros disponibles:**
-- Cursos: `?language=1`, `?difficulty_level=A1`, `?search=básico`
-- Lecciones: `?module=1`, `?content_type=video`
-- Ejercicios: `?lesson=1`, `?exercise_type=multiple_choice`
-
-### Progreso y Gamificación — Autenticado (datos propios)
-
-| Método | Endpoint | Descripción |
-|---|---|---|
-| `GET/POST` | `/api/progress/` | Progreso por lección. Filtro: `?status=completed` |
-| `GET` | `/api/stats/` | XP total, racha actual, racha más larga |
-| `GET` | `/api/achievements/` | Catálogo de logros disponibles |
-| `GET` | `/api/my-achievements/` | Logros desbloqueados por el usuario |
-
-### Suscripciones y Pagos
-
-| Método | Endpoint | Acceso | Descripción |
-|---|---|---|---|
-| `GET/POST` | `/api/subscriptions/` | Lectura: todos / Escritura: Admin | Planes disponibles |
-| `GET/POST` | `/api/my-subscriptions/` | Autenticado (propio) | Suscripciones del usuario |
-| `GET/POST` | `/api/payments/` | Autenticado (propio) | Historial de pagos |
-| `GET/POST` | `/api/orders/` | Propio / Admin ve todas | Órdenes de compra |
-| `GET` | `/api/orders/stats/` | Solo Admin | Ingresos totales y cantidad de órdenes |
-
-### Paginación global
-
-```json
-{
-  "count": 50,
-  "next": "http://servidor/api/courses/?page=2",
-  "previous": null,
-  "results": [...]
-}
-```
-
-Parámetros: `?page=2` · `?page_size=20` (máx 100)
-
-### Header de autenticación
-
-```
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
-```
-
----
-
-## Panel de Administración Django
-
-Disponible en: `http://tu-servidor/admin/`
-
-Acceso con usuario `role=admin` (`is_staff=True`, `is_superuser=True`).
-
-### Modelos gestionables desde el panel
-
-| Sección | Modelos |
-|---|---|
-| **Usuarios** | Role, User, UserProfile |
-| **Contenido** | Language, Course, Module, Lesson, Exercise |
-| **Progreso** | UserProgress, UserStats, Achievement, UserAchievement |
-| **Pagos** | Subscription, UserSubscription, Payment, Order |
-
-Desde `/admin/` puedes crear, editar y eliminar cualquier registro sin tocar la API directamente.
-
----
-
-## Tecnologías
-
-| Tecnología | Versión | Uso |
-|---|---|---|
-| Python | 3.11+ | Lenguaje principal |
-| Django | 4.2+ | Framework backend |
-| Django REST Framework | 3.14+ | API REST |
-| djangorestframework-simplejwt | 5.3+ | Autenticación JWT |
-| django-cors-headers | 4.0+ | CORS para Android |
-| django-filter | 23.0+ | Filtros avanzados |
-| psycopg2-binary | 2.9+ | Conector PostgreSQL |
-| python-decouple | 3.8+ | Variables de entorno |
-| PostgreSQL | 14+ | Base de datos |
-| GitHub Actions | — | CI/CD automático |
-| Gunicorn | — | Servidor WSGI producción |
-
----
-
-## Instalación
+## Instalación Local
 
 ### Prerrequisitos
-
 - Python 3.11+
 - PostgreSQL 14+
 - Git
@@ -355,19 +89,17 @@ Desde `/admin/` puedes crear, editar y eliminar cualquier registro sin tocar la 
 
 ```bash
 git clone https://github.com/Axel-25-dg/idiomas_api_guaman_danny.git
-cd aplicacionidion_idiomas_guaman_danny
+cd idiomas_api_guaman_danny
 ```
 
 ### 2. Crear y activar entorno virtual
 
-```powershell
+```bash
 # Windows
 python -m venv .venv
 .venv\Scripts\Activate.ps1
-```
 
-```bash
-# Linux / Mac
+# Linux/Mac
 python3 -m venv .venv
 source .venv/bin/activate
 ```
@@ -381,21 +113,19 @@ pip install -r requirements.txt
 ### 4. Configurar variables de entorno
 
 ```bash
-cp .env.example .env   # Linux/Mac
-copy .env.example .env # Windows
+cp .env.example .env
 ```
 
+Editar `.env`:
 ```env
-SECRET_KEY=tu_clave_secreta_aqui
+SECRET_KEY=tu_clave_secreta
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
-
 DB_NAME=languageapi_db
 DB_USER=postgres
 DB_PASSWORD=tu_password
 DB_HOST=localhost
 DB_PORT=5432
-
 CORS_ALLOW_ALL_ORIGINS=True
 ```
 
@@ -405,77 +135,248 @@ CORS_ALLOW_ALL_ORIGINS=True
 CREATE DATABASE languageapi_db;
 ```
 
-### 6. Aplicar migraciones
+### 6. Ejecutar migraciones
 
 ```bash
 python manage.py migrate
 ```
 
-> La migración `0003` crea automáticamente los roles `admin`, `teacher`, `student`
-> y asigna roles a usuarios existentes según sus flags.
-
-### 7. Crear superusuario (admin)
+### 7. Crear superusuario
 
 ```bash
 python manage.py createsuperuser
 ```
 
-> Después del login en `/admin/`, asigna el rol `admin` al superusuario
-> desde **Learning > Users** para que funcione con la app Android.
-
-### 8. Iniciar servidor
+### 8. Ejecutar servidor
 
 ```bash
 python manage.py runserver
 ```
 
-- API: `http://127.0.0.1:8000/api/`
-- Admin: `http://127.0.0.1:8000/admin/`
+- API: http://127.0.0.1:8000/api/
+- Admin: http://127.0.0.1:8000/admin/
+- Swagger: http://127.0.0.1:8000/api/docs/
+- Redoc: http://127.0.0.1:8000/api/redoc/
 
 ---
 
-## Deploy con GitHub Actions
+## Despliegue en VPS (Producción)
 
-El pipeline en `.github/workflows/deploy.yml` se activa automáticamente con cada push a `main`:
+### Servidor
+- **Proveedor:** Hetzner Cloud
+- **SO:** Ubuntu 22.04 LTS
+- **IP/Dominio:** guaman-idiomas-ute.online
 
+### Configuración de PostgreSQL
+
+```bash
+sudo apt install postgresql postgresql-contrib
+sudo -u postgres createdb languageapi_db
+sudo -u postgres createuser --superuser api_user
 ```
-push a main
-  └── GitHub Actions (ubuntu-latest)
-        ├── Checkout código
-        └── SSH al VPS
-              ├── git pull origin main
-              ├── source .venv/bin/activate
-              ├── pip install -r requirements.txt
-              ├── python manage.py migrate        ← aplica 0003 en producción
-              └── systemctl restart gunicorn-shopapi.service
+
+### Configuración de Gunicorn
+
+```bash
+pip install gunicorn
 ```
 
-**Secrets requeridos en GitHub:**
+Archivo systemd: `/etc/systemd/system/gunicorn-shopapi.service`
+```ini
+[Unit]
+Description=Gunicorn JumpUp API
+After=network.target
 
-| Secret | Descripción |
+[Service]
+User=root
+WorkingDirectory=/root/idiomas_api_guaman_danny
+ExecStart=/root/idiomas_api_guaman_danny/.venv/bin/gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl enable gunicorn-shopapi
+sudo systemctl start gunicorn-shopapi
+```
+
+### Configuración de Nginx
+
+```nginx
+server {
+    listen 80;
+    server_name guaman-idiomas-ute.online;
+
+    location /static/ {
+        alias /root/idiomas_api_guaman_danny/staticfiles/;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+```
+
+### CI/CD con GitHub Actions
+
+Cada push a `main` ejecuta automáticamente:
+```
+git pull → pip install → migrate → collectstatic → restart gunicorn
+```
+
+---
+
+## Uso de la API
+
+### Obtener token JWT
+
+```bash
+curl -X POST https://guaman-idiomas-ute.online/api/auth/login/ \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@email.com", "password": "Pass123!"}'
+```
+
+Respuesta:
+```json
+{
+  "access": "eyJ...",
+  "refresh": "eyJ...",
+  "user": {"id": 1, "email": "admin@email.com", "role": "admin", "is_staff": true}
+}
+```
+
+### Usar endpoints protegidos
+
+```bash
+curl https://guaman-idiomas-ute.online/api/courses/ \
+  -H "Authorization: Bearer eyJ..."
+```
+
+### Ejemplo: Crear un curso (teacher/admin)
+
+```bash
+curl -X POST https://guaman-idiomas-ute.online/api/courses/ \
+  -H "Authorization: Bearer eyJ..." \
+  -H "Content-Type: application/json" \
+  -d '{"language": 1, "title": "Inglés A1", "description": "Curso básico", "difficulty_level": "A1"}'
+```
+
+---
+
+## Endpoints Completos
+
+### Autenticación (Público)
+| Método | URL | Descripción |
+|---|---|---|
+| POST | `/api/auth/register/` | Registro (auto-asigna role=student) |
+| POST | `/api/auth/login/` | Login → access + refresh + user |
+| POST | `/api/auth/token/refresh/` | Renovar token |
+| GET | `/api/auth/me/` | Perfil del usuario autenticado |
+
+### Dashboards
+| Método | URL | Acceso |
+|---|---|---|
+| GET | `/api/dashboard/student/` | Student |
+| GET | `/api/dashboard/teacher/` | Teacher/Admin |
+| GET | `/api/dashboard/admin/` | Admin |
+
+### Contenido Educativo
+| Método | URL | Lectura | Escritura |
+|---|---|---|---|
+| GET/POST/PUT/DELETE | `/api/languages/` | Todos | Admin |
+| GET/POST/PUT/DELETE | `/api/courses/` | Todos | Teacher/Admin |
+| GET/POST/PUT/DELETE | `/api/modules/` | Todos | Teacher/Admin |
+| GET/POST/PUT/DELETE | `/api/lessons/` | Todos | Teacher/Admin |
+| GET/POST/PUT/DELETE | `/api/exercises/` | Todos | Teacher/Admin |
+
+### Progreso y Gamificación
+| Método | URL | Descripción |
+|---|---|---|
+| GET/POST | `/api/progress/` | Progreso por lección |
+| GET | `/api/progress/summary/` | Resumen completo |
+| GET | `/api/stats/` | XP, nivel, rachas |
+| GET | `/api/achievements/` | Catálogo de logros |
+| GET | `/api/my-achievements/` | Logros desbloqueados |
+| GET | `/api/ranking/` | Top 100 por XP |
+
+### Clases Virtuales
+| Método | URL | Descripción |
+|---|---|---|
+| GET/POST | `/api/classrooms/` | CRUD clases (teacher) |
+| GET | `/api/classrooms/{id}/` | Detalle con alumnos |
+| POST | `/api/classrooms/join/` | Unirse con código |
+| GET | `/api/classrooms/mine/` | Mis clases (student) |
+| POST | `/api/classrooms/{id}/remove-student/` | Expulsar alumno |
+
+### Recursos
+| Método | URL | Descripción |
+|---|---|---|
+| GET/POST/PUT/DELETE | `/api/resources/` | Materiales (PDF, audio, video, word) |
+
+### Certificados
+| Método | URL | Descripción |
+|---|---|---|
+| GET/POST | `/api/certificates/` | CRUD certificados |
+| PATCH | `/api/certificates/{id}/issue/` | Emitir |
+| PATCH | `/api/certificates/{id}/revoke/` | Revocar |
+| GET | `/api/certificates/verify/{code}/` | Verificación pública |
+
+### Suscripciones y Pagos
+| Método | URL | Descripción |
+|---|---|---|
+| GET/POST | `/api/subscriptions/` | Planes (admin crea) |
+| GET/POST | `/api/my-subscriptions/` | Suscribirse |
+| GET/POST | `/api/payments/` | Registrar pagos |
+| GET/POST | `/api/orders/` | Órdenes de compra |
+| GET | `/api/orders/stats/` | Estadísticas (admin) |
+
+### Gestión de Usuarios (Admin)
+| Método | URL | Descripción |
+|---|---|---|
+| GET/POST/PATCH/DELETE | `/api/users/` | Staff (teachers/admins) |
+| GET/PATCH/DELETE | `/api/admin-students/` | Estudiantes |
+
+### Documentación
+| URL | Formato |
 |---|---|
-| `SERVER_IP` | IP del VPS |
-| `SERVER_USER` | Usuario SSH (root) |
-| `SSH_PRIVATE_KEY` | Llave privada SSH |
+| `/api/docs/` | Swagger UI |
+| `/api/redoc/` | Redoc |
+| `/api/schema/` | OpenAPI JSON |
+
+---
+
+## Tecnologías
+
+| Tecnología | Uso |
+|---|---|
+| Python 3.11+ | Lenguaje |
+| Django 4.2+ | Framework |
+| Django REST Framework 3.14+ | API REST |
+| drf-spectacular 0.27+ | Documentación Swagger/Redoc |
+| djangorestframework-simplejwt 5.3+ | JWT |
+| django-cors-headers 4.0+ | CORS |
+| django-filter 23.0+ | Filtros |
+| psycopg2-binary 2.9+ | PostgreSQL |
+| python-decouple 3.8+ | Variables de entorno |
+| PostgreSQL 14+ | Base de datos |
+| Gunicorn | WSGI Server |
+| Nginx | Proxy inverso |
+| GitHub Actions | CI/CD |
 
 ---
 
 ## Testing
 
 ```bash
-# Todos los tests
 python manage.py test learning --verbosity=2
-
-# Solo tests de roles y permisos
-python manage.py test learning.tests.test_roles_and_permissions --verbosity=2
 ```
 
-**Cobertura actual: 29 tests**
-
-| Suite | Tests | Cubre |
-|---|---|---|
-| `test_api.py` | 6 | Auth básico, idiomas, permisos básicos |
-| `test_roles_and_permissions.py` | 23 | Sincronización de flags, registro, login con `user{}`, `/api/auth/me/`, permisos por rol, migración de datos |
+29 tests cubren: registro, login, roles, sincronización de flags, permisos por rol, migración de datos.
 
 ---
 
@@ -485,16 +386,8 @@ python manage.py test learning.tests.test_roles_and_permissions --verbosity=2
 
 **Danny Alexander Guamán Pillajo**
 
-Estudiante de Ingeniería en Desarrollo de Software
-
 Universidad Tecnológica Equinoccial — UTE
 
-Seminario de Integración — Módulo 2
-
-<br/>
-
-<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/UTE_logo.svg/512px-UTE_logo.svg.png" width="90" alt="UTE"/>
-
-*Facultad de Ciencias de la Ingeniería e Industrias*
+Facultad de Ciencias de la Ingeniería e Industrias
 
 </div>
