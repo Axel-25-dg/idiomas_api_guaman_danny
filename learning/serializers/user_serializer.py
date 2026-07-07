@@ -2,7 +2,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
 
-from learning.models import User, UserProfile, Role, ROLE_STUDENT
+from learning.models import User, UserProfile, Role, ROLE_STUDENT, Language
 
 
 # ─── Serializers de solo lectura ──────────────────────────────────────────────
@@ -13,14 +13,28 @@ class RoleSerializer(serializers.ModelSerializer):
         fields = ['id', 'name']
 
 
+class ProfileLanguageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Language
+        fields = ['id', 'name', 'code', 'flag_icon_url']
+
+
+
 class UserProfileSerializer(serializers.ModelSerializer):
     avatar_url = serializers.SerializerMethodField()
+    languages_learning_details = ProfileLanguageSerializer(source='languages_learning', many=True, read_only=True)
+    languages_teaching_details = ProfileLanguageSerializer(source='languages_teaching', many=True, read_only=True)
+    
+    languages_learning = serializers.PrimaryKeyRelatedField(many=True, queryset=Language.objects.all(), required=False)
+    languages_teaching = serializers.PrimaryKeyRelatedField(many=True, queryset=Language.objects.all(), required=False)
 
     class Meta:
         model = UserProfile
         fields = [
             'id', 'first_name', 'last_name', 'avatar', 'avatar_url',
-            'native_language', 'timezone'
+            'native_language', 'timezone',
+            'languages_learning', 'languages_learning_details',
+            'languages_teaching', 'languages_teaching_details'
         ]
         extra_kwargs = {'avatar': {'write_only': True}}
 
@@ -68,9 +82,17 @@ class UserSerializer(serializers.ModelSerializer):
         # Actualizar campos del Profile
         if profile_data:
             profile = instance.profile
+            languages_learning = profile_data.pop('languages_learning', None)
+            languages_teaching = profile_data.pop('languages_teaching', None)
+
             for attr, value in profile_data.items():
                 setattr(profile, attr, value)
             profile.save()
+
+            if languages_learning is not None:
+                profile.languages_learning.set(languages_learning)
+            if languages_teaching is not None:
+                profile.languages_teaching.set(languages_teaching)
 
         return instance
 

@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 from learning.views import (
     RegisterView, LoginView, MeView,
-    PasswordResetRequestView, PasswordResetConfirmView,
+    PasswordResetRequestView, PasswordResetConfirmView, UpdateUserLanguagesView,
     LanguageViewSet, CourseViewSet, ModuleViewSet, LessonViewSet, ExerciseViewSet,
     UserProgressViewSet, UserStatsViewSet, AchievementViewSet, UserAchievementViewSet,
     RankingViewSet,
@@ -73,6 +73,7 @@ urlpatterns = [
     path('auth/login/',         LoginView.as_view(),         name='login'),
     path('auth/token/refresh/', TokenRefreshView.as_view(),  name='token_refresh'),
     path('auth/me/',            MeView.as_view(),            name='me'),
+    path('auth/profile/update-languages/', UpdateUserLanguagesView.as_view(), name='update_languages'),
 
     # ── Password Reset ───────────────────────────────────────────────────────
     path('auth/password-reset/', PasswordResetRequestView.as_view(), name='password_reset'),

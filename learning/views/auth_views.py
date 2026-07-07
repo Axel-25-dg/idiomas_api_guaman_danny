@@ -147,3 +147,34 @@ class PasswordResetConfirmView(generics.GenericAPIView):
                 
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             return Response({'error': 'Datos de restablecimiento inválidos.'}, status=status.HTTP_400_BAD_REQUEST)
+
+class UpdateUserLanguagesView(generics.GenericAPIView):
+    """
+    PATCH /api/auth/profile/update-languages/
+    Permite añadir, remover o cambiar la lista completa de idiomas de interés.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def patch(self, request, *args, **kwargs):
+        profile = request.user.profile
+        role = request.user.role.name if request.user.role else None
+        
+        # Se requiere usar el serializador de perfil para validaciones
+        from learning.serializers import UserProfileSerializer
+        
+        if role in ['student', 'premium_student']:
+            if 'languages_learning' in request.data:
+                serializer = UserProfileSerializer(profile, data=request.data, partial=True)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                return Response({"message": "Idiomas de aprendizaje actualizados", "data": serializer.data})
+                
+        elif role in ['teacher', 'assistant_teacher']:
+            if 'languages_teaching' in request.data:
+                serializer = UserProfileSerializer(profile, data=request.data, partial=True)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                return Response({"message": "Idiomas de enseñanza actualizados", "data": serializer.data})
+
+        return Response({"error": "No se enviaron campos válidos para el rol asignado o rol no autorizado para esta acción."}, status=status.HTTP_400_BAD_REQUEST)
+

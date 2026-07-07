@@ -111,6 +111,17 @@ class UserProfile(models.Model):
     timezone        = models.CharField(max_length=50, default='America/Guayaquil')
     updated_at      = models.DateTimeField(auto_now=True)
 
+    languages_learning = models.ManyToManyField(
+        'learning.Language', 
+        blank=True, 
+        related_name='student_profiles'
+    )
+    languages_teaching = models.ManyToManyField(
+        'learning.Language', 
+        blank=True, 
+        related_name='teacher_profiles'
+    )
+
     class Meta:
         ordering = ['user']
 
