@@ -52,7 +52,7 @@ JumpUp UTE es una API REST completa para una plataforma de aprendizaje de idioma
 |---|---|---|---|
 | 1 | Role | `learning_role` | OneToMany → User |
 | 2 | User | `learning_user` | FK → Role |
-| 3 | UserProfile | `learning_userprofile` | OneToOne → User |
+| 3 | UserProfile | `learning_userprofile` | OneToOne → User, M2M → Language |
 | 4 | Language | `learning_language` | OneToMany → Course |
 | 5 | Course | `learning_course` | FK → Language |
 | 6 | Module | `learning_module` | FK → Course |
@@ -74,7 +74,7 @@ JumpUp UTE es una API REST completa para una plataforma de aprendizaje de idioma
 **Relaciones implementadas:**
 - OneToOne: User ↔ UserProfile, User ↔ UserStats
 - OneToMany: Language → Course → Module → Lesson → Exercise
-- ManyToMany: Classroom ↔ Students (through ClassroomEnrollment)
+- ManyToMany: Classroom ↔ Students (through ClassroomEnrollment), UserProfile ↔ Language (learning/teaching)
 
 ---
 
@@ -270,13 +270,14 @@ curl -X POST https://guaman-idiomas-ute.online/api/courses/ \
 
 ## Endpoints Completos
 
-### Autenticación (Público)
+### Autenticación (Público / Perfil)
 | Método | URL | Descripción |
 |---|---|---|
 | POST | `/api/auth/register/` | Registro (auto-asigna role=student) |
 | POST | `/api/auth/login/` | Login → access + refresh + user |
 | POST | `/api/auth/token/refresh/` | Renovar token |
 | GET | `/api/auth/me/` | Perfil del usuario autenticado |
+| PATCH | `/api/auth/profile/update-languages/` | Actualizar idiomas (aprender/enseñar) |
 
 ### Dashboards
 | Método | URL | Acceso |
