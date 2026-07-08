@@ -11,7 +11,10 @@ from .email_log import EmailLog, BroadcastEmail
 from .activities import UserActivityLog, UserFavorite
 from .reports import Report, MediaAsset
 from .feedback import UserFeedback
-from .notifications import Announcement, Notification, UserNotificationPreference
+# Fuente única de notificaciones — notification.py consolidado
+from .notification import (
+    Announcement, Notification, UserNotificationPreference, NotificationType,
+)
 from .maintenance import MaintenanceLog, BackupHistory
 from .messaging import MessageThread, Message, MessageAttachment
 from .forum import ForumCategory, ForumThread, ForumPost, ForumReaction, ForumReport
@@ -43,8 +46,8 @@ __all__ = [
     'UserActivityLog', 'UserFavorite',
     'Report', 'MediaAsset',
     'UserFeedback',
-    # Notificaciones
-    'Announcement', 'Notification', 'UserNotificationPreference',
+    # Notificaciones (fuente única)
+    'Announcement', 'Notification', 'UserNotificationPreference', 'NotificationType',
     # Mantenimiento
     'MaintenanceLog', 'BackupHistory',
     # Mensajería

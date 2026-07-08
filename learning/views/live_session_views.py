@@ -56,6 +56,23 @@ class LiveSessionViewSet(viewsets.ModelViewSet):
             return [IsTeacherOrAdmin()]
         return [permissions.IsAuthenticated()]
 
+    def perform_create(self, serializer):
+        session = serializer.save()
+        # Notificar a todos los estudiantes inscritos en el curso (si tiene)
+        if session.course:
+            from learning.models import ClassroomEnrollment
+            from learning.utils.notify import push_notification
+            enrolled = ClassroomEnrollment.objects.filter(
+                classroom__course=session.course, is_active=True
+            ).select_related('student').exclude(student=session.teacher)
+            for enrollment in enrolled:
+                push_notification(
+                    user       = enrollment.student,
+                    title      = 'Nueva sesión en vivo',
+                    message    = f'{session.teacher.username} ha programado: {session.title}',
+                    notif_type = 'live_session',
+                )
+
     def destroy(self, request, *args, **kwargs):
         session = self.get_object()
         session.status = 'cancelled'

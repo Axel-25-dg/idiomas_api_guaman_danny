@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 from decouple import config
 from datetime import timedelta
@@ -14,10 +15,11 @@ DJANGO_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
 ]
 
 THIRD_PARTY_APPS = [
+    'daphne',           # Servidor ASGI (debe ir antes de django.contrib.staticfiles)
+    'channels',         # Django Channels — WebSockets
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
@@ -31,7 +33,7 @@ LOCAL_APPS = [
     'seguridad_acceso',
 ]
 
-INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + ['django.contrib.staticfiles'] + LOCAL_APPS
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -63,17 +65,51 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
+ASGI_APPLICATION  = 'config.asgi.application'
 
-DATABASES = {
+# ─── Django Channels — Redis Channel Layer ────────────────────────────────────
+REDIS_HOST = config('REDIS_HOST', default='127.0.0.1')
+REDIS_PORT = config('REDIS_PORT', default=6379, cast=int)
+CHANNEL_LAYERS_BACKEND = config(
+    'CHANNEL_LAYERS_BACKEND',
+    default='channels.layers.InMemoryChannelLayer' if DEBUG else 'channels_redis.core.RedisChannelLayer',
+)
+
+CHANNEL_LAYERS = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5432'),
-    }
+        'BACKEND': CHANNEL_LAYERS_BACKEND,
+        'CONFIG': {
+            'hosts': [(REDIS_HOST, REDIS_PORT)],
+        } if CHANNEL_LAYERS_BACKEND == 'channels_redis.core.RedisChannelLayer' else {},
+    },
 }
+
+DB_NAME = config('DB_NAME', default='')
+DB_USER = config('DB_USER', default='')
+DB_PASSWORD = config('DB_PASSWORD', default='')
+DB_HOST = config('DB_HOST', default='localhost')
+DB_PORT = config('DB_PORT', default='5432')
+
+RUNNING_TESTS = 'test' in sys.argv
+
+if DB_NAME and not RUNNING_TESTS:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': DB_NAME,
+            'USER': DB_USER,
+            'PASSWORD': DB_PASSWORD,
+            'HOST': DB_HOST,
+            'PORT': DB_PORT,
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 AUTH_USER_MODEL = 'learning.User'
 

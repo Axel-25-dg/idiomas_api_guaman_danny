@@ -77,9 +77,20 @@ class MessageThreadViewSet(viewsets.ModelViewSet):
         # POST — enviar mensaje
         serializer = MessageSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        serializer.save(sender=request.user, thread=thread)
+        msg = serializer.save(sender=request.user, thread=thread)
         # Actualizar timestamp del hilo
         thread.save(update_fields=['updated_at'])
+
+        # Notificar en tiempo real a los otros participantes
+        from learning.utils.notify import push_notification
+        for participant in thread.participants.exclude(pk=request.user.pk):
+            push_notification(
+                user       = participant,
+                title      = f'Nuevo mensaje de {request.user.username}',
+                message    = msg.body[:120],
+                notif_type = 'message',
+            )
+
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
