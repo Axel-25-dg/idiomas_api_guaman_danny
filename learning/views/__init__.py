@@ -19,3 +19,14 @@ from .dashboard_views import StudentDashboardView, TeacherDashboardView, AdminDa
 from .interaction_views import ReportViewSet,UserFeedbackViewSet, MediaAssetViewSet, UserFavoriteViewSet, UserActivityLogViewSet
 from .notification_views import NotificationViewSet, UserNotificationPreferenceViewSet, AnnouncementViewSet
 from .system_views import MaintenanceLogViewSet, BackupHistoryViewSet
+
+# ── Nuevos módulos ────────────────────────────────────────────────────────────
+from .messaging_views import MessageThreadViewSet, MessageViewSet
+from .forum_views import (
+    ForumCategoryViewSet, ForumThreadViewSet, ForumPostViewSet,
+    ForumReactionViewSet, ForumReportViewSet,
+)
+from .social_views import SocialPostViewSet, SocialCommentViewSet, SocialReactionViewSet
+from .live_session_views import LiveSessionViewSet
+from .media_views import MediaFileViewSet, MediaProgressViewSet
+from .search_views import GlobalSearchView

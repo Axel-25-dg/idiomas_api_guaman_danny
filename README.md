@@ -46,7 +46,7 @@ JumpUp UTE es una API REST completa para una plataforma de aprendizaje de idioma
 
 ---
 
-## Base de Datos — 20 Tablas
+## Base de Datos — 36 Tablas
 
 | # | Modelo | Tabla | Relaciones |
 |---|---|---|---|
@@ -70,15 +70,31 @@ JumpUp UTE es una API REST completa para una plataforma de aprendizaje de idioma
 | 18 | ClassroomEnrollment | `learning_classroomenrollment` | FK → Classroom, User |
 | 19 | Certificate | `learning_certificate` | FK → User(student), User(issued_by) |
 | 20 | TeacherResource | `learning_teacherresource` | FK → User(teacher), Course, Lesson |
+| 21 | MediaFile | `learning_mediafile` | FK → User(uploaded_by) |
+| 22 | MessageThread | `learning_messagethread` | M2M → User(participants) |
+| 23 | Message | `learning_message` | FK → MessageThread, User(sender) |
+| 24 | MessageAttachment | `learning_messageattachment` | FK → Message |
+| 25 | ForumCategory | `learning_forumcategory` | OneToMany → ForumThread |
+| 26 | ForumThread | `learning_forumthread` | FK → ForumCategory, User |
+| 27 | ForumPost | `learning_forumpost` | FK → ForumThread, User, self(parent) |
+| 28 | ForumReaction | `learning_forumreaction` | FK → User, ForumPost |
+| 29 | ForumReport | `learning_forumreport` | FK → User(reporter), ForumPost |
+| 30 | SocialPost | `learning_socialpost` | FK → User |
+| 31 | SocialComment | `learning_socialcomment` | FK → SocialPost, User |
+| 32 | SocialReaction | `learning_socialreaction` | FK → User, SocialPost |
+| 33 | LiveSession | `learning_livesession` | FK → User(teacher), Course |
+| 34 | LiveParticipant | `learning_liveparticipant` | FK → LiveSession, User |
+| 35 | MediaProgress | `learning_mediaprogress` | FK → User, Lesson |
+| 36 | Notification | `learning_notification` | FK → User |
 
 **Relaciones implementadas:**
 - OneToOne: User ↔ UserProfile, User ↔ UserStats
 - OneToMany: Language → Course → Module → Lesson → Exercise
-- ManyToMany: Classroom ↔ Students (through ClassroomEnrollment), UserProfile ↔ Language (`languages_learning` para estudiantes, `languages_teaching` para profesores)
+- ManyToMany: Classroom ↔ Students (through ClassroomEnrollment), UserProfile ↔ Language (`languages_learning` para estudiantes, `languages_teaching` para profesores), MessageThread ↔ Participants
 
 ---
 
-## Instalación Local
+## Endpoints Completos
 
 ### Prerrequisitos
 - Python 3.11+
@@ -358,6 +374,72 @@ curl -X POST https://guaman-idiomas-ute.online/api/courses/ \
 | GET/POST/PATCH/DELETE | `/api/users/` | Staff (teachers/admins) |
 | GET/PATCH/DELETE | `/api/admin-students/` | Estudiantes |
 
+### Mensajería y Comunicación
+| Método | URL | Descripción |
+|---|---|---|
+| GET/POST | `/api/threads/` | Hilos del usuario / crear hilo |
+| GET | `/api/threads/{id}/` | Detalle del hilo |
+| DELETE | `/api/threads/{id}/` | Desactivar hilo |
+| GET/POST | `/api/threads/{id}/messages/` | Mensajes del hilo / enviar mensaje |
+| POST | `/api/messages/{id}/read/` | Marcar mensaje como leído |
+
+### Comunidad — Foro
+| Método | URL | Descripción |
+|---|---|---|
+| GET | `/api/forum-categories/` | Categorías activas |
+| POST/PUT/DELETE | `/api/forum-categories/` | CRUD (admin) |
+| GET/POST | `/api/forum-threads/` | Hilos del foro |
+| POST | `/api/forum-threads/{id}/pin/` | Fijar/desfijar hilo (admin) |
+| POST | `/api/forum-threads/{id}/close/` | Cerrar/abrir hilo (admin) |
+| GET/POST | `/api/forum-posts/` | Posts (filtrar por `?thread=id`) |
+| POST | `/api/forum-reactions/` | Reaccionar a un post (upsert) |
+| GET/POST | `/api/forum-reports/` | Reportar post / gestionar reportes (admin) |
+
+### Feed Social
+| Método | URL | Descripción |
+|---|---|---|
+| GET/POST | `/api/social-posts/` | Feed público |
+| GET | `/api/social-posts/mine/` | Solo mis publicaciones |
+| GET/POST | `/api/social-comments/` | Comentarios (filtrar por `?post=id`) |
+| POST | `/api/social-reactions/` | Reaccionar a post (upsert) |
+
+### Centro de Notificaciones
+| Método | URL | Descripción |
+|---|---|---|
+| GET | `/api/notifications/` | Mis notificaciones |
+| GET | `/api/notifications/?is_read=false` | Solo no leídas |
+| GET | `/api/notifications/?type=course` | Filtrar por tipo (course, payment, certificate...) |
+| POST | `/api/notifications/{id}/read/` | Marcar una como leída |
+| POST | `/api/notifications/read-all/` | Marcar todas como leídas |
+| GET | `/api/notifications/unread-count/` | Cantidad de no leídas |
+
+### Videotutoría — Sesiones en Vivo
+| Método | URL | Acceso |
+|---|---|---|
+| GET/POST | `/api/live-sessions/` | Listar / crear sesión |
+| GET | `/api/live-sessions/{id}/` | Detalle con participantes |
+| POST | `/api/live-sessions/{id}/join/` | Unirse a sesión |
+| POST | `/api/live-sessions/{id}/leave/` | Salir de sesión |
+| GET | `/api/live-sessions/{id}/participants/` | Lista de participantes |
+| POST | `/api/live-sessions/{id}/start/` | Iniciar sesión (teacher/admin) |
+| POST | `/api/live-sessions/{id}/end/` | Finalizar sesión (teacher/admin) |
+
+### Multimedia
+| Método | URL | Descripción |
+|---|---|---|
+| GET | `/api/media-files/` | Listar archivos multimedia |
+| POST | `/api/media-files/` | Subir archivo (teacher/admin) |
+| GET/PATCH | `/api/media-progress/` | Ver / actualizar progreso de reproducción |
+| POST | `/api/media-progress/` | Registrar/iniciar progreso (upsert) |
+| GET | `/api/media-progress/resume/{lesson_id}/` | Reanudar desde donde se dejó |
+
+### Búsqueda Global
+| Método | URL | Descripción |
+|---|---|---|
+| GET | `/api/search/?q=<término>` | Búsqueda en cursos, lecciones, recursos, foro y sesiones |
+| GET | `/api/search/?q=<término>&type=cursos` | Filtrar por tipo: `cursos`, `lecciones`, `usuarios` (admin), `recursos`, `foro`, `sesiones` |
+| GET | `/api/search/?q=<término>&limit=10` | Limitar resultados por tipo (default 5, max 20) |
+
 ### Documentación
 | URL | Formato |
 |---|---|
@@ -398,6 +480,39 @@ python manage.py test learning --verbosity=2
 ---
 
 ## Cambios Recientes
+
+### v1.3 — 07 Jul 2026 (Módulos pendientes implementados)
+- **Módulo Mensajería:** vistas y rutas para `MessageThread`, `Message`, `MessageAttachment`
+  - `GET/POST /api/threads/` y `GET/POST /api/threads/{id}/messages/`
+  - Marcar mensajes como leídos automáticamente al listar
+  - `POST /api/messages/{id}/read/` para marcar individualmente
+- **Módulo Foro:** CRUD completo para `ForumCategory`, `ForumThread`, `ForumPost`, `ForumReaction`, `ForumReport`
+  - Incremento de vistas al abrir un hilo
+  - Soft-delete en posts (`is_deleted=True`)
+  - Acciones admin: `pin` y `close` en hilos
+  - Upsert en reacciones (una reacción por usuario por post)
+- **Feed Social:** vistas y rutas para `SocialPost`, `SocialComment`, `SocialReaction`
+  - Feed de publicaciones públicas + las propias del usuario
+  - Upsert en reacciones
+  - `GET /api/social-posts/mine/`
+- **Centro de Notificaciones:** mejorado con filtros y nuevas acciones
+  - Filtrar por `is_read` y `type`
+  - `POST /api/notifications/{id}/read/` — marcar una como leída
+  - `POST /api/notifications/read-all/` — marcar todas como leídas
+  - `GET /api/notifications/unread-count/` — contador de no leídas
+- **Videotutoría:** vistas para `LiveSession` y `LiveParticipant`
+  - Unirse/salir de sesión con control de capacidad
+  - Transiciones de estado: `scheduled → live → ended`
+  - Registro automático de `left_at` al finalizar
+- **Multimedia:** serializers y vistas para `MediaFile` y `MediaProgress`
+  - Upsert de progreso (no duplica si ya existe)
+  - `GET /api/media-progress/resume/{lesson_id}/` — reanudar reproducción
+- **Búsqueda Global:** `GET /api/search/?q=<término>`
+  - Busca en cursos, lecciones, recursos, foro y sesiones
+  - Filtro por tipo con `?type=cursos|lecciones|recursos|foro|sesiones|usuarios`
+  - Usuarios solo visibles para admins
+- **Migración `0010`:** tablas para Forum, Messaging, Social, LiveSession, MediaProgress
+- **Serializers exportados:** todos los nuevos serializers agregados a `serializers/__init__.py`
 
 ### v1.2 — 07 Jul 2026 (`new_act` / `new_act_read`)
 - **Nuevo:** campos `languages_learning` y `languages_teaching` (ManyToMany → Language) en `UserProfile`

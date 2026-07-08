@@ -12,12 +12,19 @@ from learning.views import (
     ClassroomViewSet, CertificateViewSet, TeacherResourceViewSet,
     StudentDashboardView, TeacherDashboardView, AdminDashboardView,
 
-    # Vistas de interacción
+    # Interacción y sistema
     ReportViewSet, UserFeedbackViewSet, MediaAssetViewSet, UserFavoriteViewSet, UserActivityLogViewSet,
-    # Vistas de notificación
     AnnouncementViewSet, NotificationViewSet, UserNotificationPreferenceViewSet,
-    # Vistas de sistema
-    MaintenanceLogViewSet, BackupHistoryViewSet, 
+    MaintenanceLogViewSet, BackupHistoryViewSet,
+
+    # Nuevos módulos
+    MessageThreadViewSet, MessageViewSet,
+    ForumCategoryViewSet, ForumThreadViewSet, ForumPostViewSet,
+    ForumReactionViewSet, ForumReportViewSet,
+    SocialPostViewSet, SocialCommentViewSet, SocialReactionViewSet,
+    LiveSessionViewSet,
+    MediaFileViewSet, MediaProgressViewSet,
+    GlobalSearchView,
 )
 from learning.views import system_views, interaction_views, notification_views
 
@@ -66,6 +73,29 @@ router.register(r'feedbacks', UserFeedbackViewSet, basename='feedback')
 router.register(r'media',     MediaAssetViewSet,   basename='media')
 router.register(r'activity-logs', UserActivityLogViewSet, basename='activity-log')
 
+# ── Mensajería ───────────────────────────────────────────────────────────────
+router.register(r'threads',  MessageThreadViewSet, basename='thread')
+router.register(r'messages', MessageViewSet,       basename='message')
+
+# ── Foro ─────────────────────────────────────────────────────────────────────
+router.register(r'forum-categories', ForumCategoryViewSet, basename='forum-category')
+router.register(r'forum-threads',    ForumThreadViewSet,   basename='forum-thread')
+router.register(r'forum-posts',      ForumPostViewSet,     basename='forum-post')
+router.register(r'forum-reactions',  ForumReactionViewSet, basename='forum-reaction')
+router.register(r'forum-reports',    ForumReportViewSet,   basename='forum-report')
+
+# ── Feed Social ──────────────────────────────────────────────────────────────
+router.register(r'social-posts',     SocialPostViewSet,     basename='social-post')
+router.register(r'social-comments',  SocialCommentViewSet,  basename='social-comment')
+router.register(r'social-reactions', SocialReactionViewSet, basename='social-reaction')
+
+# ── Videotutoría ─────────────────────────────────────────────────────────────
+router.register(r'live-sessions', LiveSessionViewSet, basename='live-session')
+
+# ── Multimedia ───────────────────────────────────────────────────────────────
+router.register(r'media-files',    MediaFileViewSet,    basename='media-file')
+router.register(r'media-progress', MediaProgressViewSet, basename='media-progress')
+
 
 urlpatterns = [
     # ── Autenticación ────────────────────────────────────────────────────────
@@ -86,4 +116,7 @@ urlpatterns = [
 
     # ── Router ───────────────────────────────────────────────────────────────
     path('', include(router.urls)),
+
+    # ── Búsqueda global ──────────────────────────────────────────────────────
+    path('search/', GlobalSearchView.as_view(), name='search'),
 ]

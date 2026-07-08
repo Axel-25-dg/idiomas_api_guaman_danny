@@ -30,18 +30,34 @@ from .certificate_serializer import (
 from .resource_serializer import TeacherResourceSerializer
 
 from .interaction_serializers import (
-    UserFavoriteSerializer, 
+    UserFavoriteSerializer,
     UserFeedbackSerializer,
     MediaAssetSerializer,
     ReportSerializer,
     UserActivityLogSerializer,
 )
 from .notification_serializers import (
-    AnnouncementSerializer, 
+    AnnouncementSerializer,
     NotificationSerializer,
     UserNotificationPreferenceSerializer,
 )
 from .system_serializers import (
     MaintenanceLogSerializer,
-    BackupHistorySerializer,        
+    BackupHistorySerializer,
 )
+
+# ── Nuevos módulos ────────────────────────────────────────────────────────────
+from .messaging_serializer import (
+    MessageThreadSerializer, MessageSerializer, MessageAttachmentSerializer,
+)
+from .forum_serializer import (
+    ForumCategorySerializer, ForumThreadSerializer, ForumPostSerializer,
+    ForumReactionSerializer, ForumReportSerializer,
+)
+from .social_serializer import (
+    SocialPostSerializer, SocialCommentSerializer, SocialReactionSerializer,
+)
+from .live_session_serializer import (
+    LiveSessionSerializer, LiveSessionDetailSerializer, LiveParticipantSerializer,
+)
+from .media_serializer import MediaFileSerializer, MediaProgressSerializer
