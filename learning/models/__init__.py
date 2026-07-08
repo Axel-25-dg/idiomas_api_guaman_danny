@@ -13,8 +13,11 @@ from .reports import Report, MediaAsset
 from .feedback import UserFeedback
 from .notifications import Announcement, Notification, UserNotificationPreference
 from .maintenance import MaintenanceLog, BackupHistory
-
-
+from .messaging import MessageThread, Message, MessageAttachment
+from .forum import ForumCategory, ForumThread, ForumPost, ForumReaction, ForumReport
+from .social import SocialPost, SocialComment, SocialReaction
+from .live_session import LiveSession, LiveParticipant
+from .media_progress import MediaProgress
 
 
 __all__ = [
@@ -29,19 +32,29 @@ __all__ = [
     'UserProgress', 'UserStats', 'Achievement', 'UserAchievement',
     # Suscripciones y pagos
     'Subscription', 'UserSubscription', 'Payment', 'Order',
-    # Nuevos módulos
+    # Clases y recursos
     'Classroom', 'ClassroomEnrollment',
     'Certificate',
     'TeacherResource',
+    # Archivos y logs
     'MediaFile',
-    'EmailLog',
-    'BroadcastEmail',
-    # Bloque: Mantenimiento y Actividades
+    'EmailLog', 'BroadcastEmail',
+    # Actividades
     'UserActivityLog', 'UserFavorite',
     'Report', 'MediaAsset',
     'UserFeedback',
-    'Announcement', 
-    'Notification', 
-    'UserNotificationPreference',
+    # Notificaciones
+    'Announcement', 'Notification', 'UserNotificationPreference',
+    # Mantenimiento
     'MaintenanceLog', 'BackupHistory',
+    # Mensajería
+    'MessageThread', 'Message', 'MessageAttachment',
+    # Foro
+    'ForumCategory', 'ForumThread', 'ForumPost', 'ForumReaction', 'ForumReport',
+    # Feed Social
+    'SocialPost', 'SocialComment', 'SocialReaction',
+    # Videotutoría
+    'LiveSession', 'LiveParticipant',
+    # Progreso multimedia
+    'MediaProgress',
 ]

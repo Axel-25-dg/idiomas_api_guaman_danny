@@ -52,7 +52,7 @@ JumpUp UTE es una API REST completa para una plataforma de aprendizaje de idioma
 |---|---|---|---|
 | 1 | Role | `learning_role` | OneToMany → User |
 | 2 | User | `learning_user` | FK → Role |
-| 3 | UserProfile | `learning_userprofile` | OneToOne → User, M2M → Language |
+| 3 | UserProfile | `learning_userprofile` | OneToOne → User, M2M → Language (aprender), M2M → Language (enseñar) |
 | 4 | Language | `learning_language` | OneToMany → Course |
 | 5 | Course | `learning_course` | FK → Language |
 | 6 | Module | `learning_module` | FK → Course |
@@ -74,7 +74,7 @@ JumpUp UTE es una API REST completa para una plataforma de aprendizaje de idioma
 **Relaciones implementadas:**
 - OneToOne: User ↔ UserProfile, User ↔ UserStats
 - OneToMany: Language → Course → Module → Lesson → Exercise
-- ManyToMany: Classroom ↔ Students (through ClassroomEnrollment), UserProfile ↔ Language (learning/teaching)
+- ManyToMany: Classroom ↔ Students (through ClassroomEnrollment), UserProfile ↔ Language (`languages_learning` para estudiantes, `languages_teaching` para profesores)
 
 ---
 
@@ -277,7 +277,23 @@ curl -X POST https://guaman-idiomas-ute.online/api/courses/ \
 | POST | `/api/auth/login/` | Login → access + refresh + user |
 | POST | `/api/auth/token/refresh/` | Renovar token |
 | GET | `/api/auth/me/` | Perfil del usuario autenticado |
-| PATCH | `/api/auth/profile/update-languages/` | Actualizar idiomas (aprender/enseñar) |
+| PATCH | `/api/auth/profile/update-languages/` | Actualizar idiomas según rol (estudiante: `languages_learning`, profesor: `languages_teaching`) |
+
+> **Reglas del endpoint `update-languages`:**
+> - **student / premium_student** → solo puede enviar `languages_learning` (idiomas que quiere aprender)
+> - **teacher / assistant_teacher** → solo puede enviar `languages_teaching` (idiomas que enseña)
+> - Enviar el campo incorrecto para el rol retorna `400 Bad Request`
+>
+> Ejemplo (student):
+> ```json
+> PATCH /api/auth/profile/update-languages/
+> { "languages_learning": [1, 3] }
+> ```
+> Ejemplo (teacher):
+> ```json
+> PATCH /api/auth/profile/update-languages/
+> { "languages_teaching": [2] }
+> ```
 
 ### Dashboards
 | Método | URL | Acceso |
@@ -378,6 +394,21 @@ python manage.py test learning --verbosity=2
 ```
 
 29 tests cubren: registro, login, roles, sincronización de flags, permisos por rol, migración de datos.
+
+---
+
+## Cambios Recientes
+
+### v1.2 — 07 Jul 2026 (`new_act` / `new_act_read`)
+- **Nuevo:** campos `languages_learning` y `languages_teaching` (ManyToMany → Language) en `UserProfile`
+  - Migración `0009_userprofile_languages_learning_and_more`
+  - `languages_learning`: idiomas que el estudiante quiere aprender (`related_name='student_profiles'`)
+  - `languages_teaching`: idiomas que el profesor enseña (`related_name='teacher_profiles'`)
+- **Nuevo:** endpoint `PATCH /api/auth/profile/update-languages/` con validación por rol
+  - students/premium_students → actualizan `languages_learning`
+  - teachers/assistant_teachers → actualizan `languages_teaching`
+- **Actualizado:** `UserProfileSerializer` para exponer y validar ambos campos M2M
+- **Actualizado:** `learning/urls.py` para registrar la nueva ruta
 
 ---
 
