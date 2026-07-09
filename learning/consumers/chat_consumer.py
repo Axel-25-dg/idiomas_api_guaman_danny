@@ -89,6 +89,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             },
         )
 
+        import asyncio
+        if await self._is_ai_thread():
+            asyncio.create_task(self._process_ai_message(body, msg.thread_id))
+
     async def _handle_typing(self, data):
         await self.channel_layer.group_send(
             self.room_name,
@@ -166,3 +170,82 @@ class ChatConsumer(AsyncWebsocketConsumer):
             is_read=False,
         ).exclude(sender=self.user).update(is_read=True, read_at=timezone.now())
         return updated > 0
+
+    async def _process_ai_message(self, user_text, thread_id):
+        # 1. Indicador de "Escribiendo..."
+        await self.channel_layer.group_send(
+            self.room_name,
+            {
+                'type':      'typing',
+                'user_id':   0, # ID del bot simulado
+                'username':  'Tutor IA',
+                'is_typing': True,
+            },
+        )
+        
+        # 2. Consultar al servicio de IA
+        from learning.services.ai_service import get_ai_response
+        ai_reply_text = await get_ai_response(user_text)
+        
+        # 3. Guardar el mensaje del bot en la BD
+        ai_msg = await self._save_ai_message(ai_reply_text, thread_id)
+        
+        # 4. Quitar el "Escribiendo..." y enviar el mensaje
+        await self.channel_layer.group_send(
+            self.room_name,
+            {
+                'type':      'typing',
+                'user_id':   0,
+                'username':  'Tutor IA',
+                'is_typing': False,
+            },
+        )
+        
+        await self.channel_layer.group_send(
+            self.room_name,
+            {
+                'type':    'chat_message',
+                'message': {
+                    'id':         ai_msg.id,
+                    'thread':     ai_msg.thread_id,
+                    'sender_id':  ai_msg.sender.id,
+                    'sender':     ai_msg.sender.email,
+                    'body':       ai_msg.body,
+                    'is_read':    False,
+                    'created_at': ai_msg.created_at.isoformat(),
+                },
+            },
+        )
+
+    @database_sync_to_async
+    def _is_ai_thread(self):
+        from learning.models import MessageThread
+        try:
+            thread = MessageThread.objects.get(pk=self.thread_id)
+            return thread.participants.count() == 1 or 'IA' in (thread.subject or '').upper()
+        except Exception:
+            return False
+
+    @database_sync_to_async
+    def _save_ai_message(self, body, thread_id):
+        from learning.models import Message, MessageThread
+        from django.contrib.auth import get_user_model
+        
+        User = get_user_model()
+        ai_user, _ = User.objects.get_or_create(
+            username='tutor_ia',
+            defaults={
+                'email': 'ia@jumpup.com',
+                'first_name': 'Tutor',
+                'last_name': 'IA',
+                'is_active': True
+            }
+        )
+        
+        thread = MessageThread.objects.get(pk=thread_id)
+        if not thread.participants.filter(id=ai_user.id).exists():
+            thread.participants.add(ai_user)
+
+        msg = Message.objects.create(thread=thread, sender=ai_user, body=body)
+        thread.save(update_fields=['updated_at'])
+        return msg
