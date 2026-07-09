@@ -7,6 +7,9 @@ from .user_serializer import (
     PasswordResetRequestSerializer,
     PasswordResetConfirmSerializer,
     StaffUserSerializer,
+    Verify2FASerializer,
+    RegisterBiometricSerializer,
+    LoginBiometricSerializer,
 )
 from .course_serializer import (
     LanguageSerializer, CourseSerializer, ModuleSerializer,

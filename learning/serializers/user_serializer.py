@@ -105,6 +105,8 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     Además, devuelve los datos del usuario en el body del response de login.
     """
 
+    remember_me = serializers.BooleanField(default=False, write_only=True)
+
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
@@ -115,7 +117,12 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
     def validate(self, attrs):
+        remember_me = attrs.pop('remember_me', False)
         data = super().validate(attrs)
+        
+        # Guardar para la vista
+        self.remember_me = remember_me
+        
         # Añadimos el objeto user al body del response — Android ya no necesita
         # decodificar el JWT para obtener el rol.
         data['user'] = {
@@ -186,8 +193,8 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
-    uid = serializers.CharField()
-    token = serializers.CharField()
+    email = serializers.EmailField()
+    code = serializers.CharField(max_length=6)
     password = serializers.CharField(write_only=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True)
 
@@ -282,3 +289,17 @@ class StaffUserSerializer(serializers.ModelSerializer):
 
         instance.save()  # <-- sincronización ocurre aquí
         return instance
+
+
+# ─── 2FA y Biométrico ─────────────────────────────────────────────────────────
+
+class Verify2FASerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    code = serializers.CharField(max_length=6)
+
+class RegisterBiometricSerializer(serializers.Serializer):
+    device_id = serializers.CharField(max_length=255)
+
+class LoginBiometricSerializer(serializers.Serializer):
+    device_id = serializers.CharField(max_length=255)
+    biometric_token = serializers.CharField(max_length=255)

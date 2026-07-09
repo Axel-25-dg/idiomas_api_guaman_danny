@@ -286,14 +286,19 @@ curl -X POST https://guaman-idiomas-ute.online/api/courses/ \
 
 ## Endpoints Completos
 
-### Autenticación (Público / Perfil)
+### Autenticación Avanzada Móvil (Público / Perfil / Seguridad)
 | Método | URL | Descripción |
 |---|---|---|
 | POST | `/api/auth/register/` | Registro (auto-asigna role=student) |
-| POST | `/api/auth/login/` | Login → access + refresh + user |
-| POST | `/api/auth/token/refresh/` | Renovar token |
+| POST | `/api/auth/login/` | Login → access + refresh + user. (Soporta `remember_me: true`) |
+| POST | `/api/auth/token/refresh/` | Renovar token JWT |
 | GET | `/api/auth/me/` | Perfil del usuario autenticado |
 | PATCH | `/api/auth/profile/update-languages/` | Actualizar idiomas según rol (estudiante: `languages_learning`, profesor: `languages_teaching`) |
+| POST | `/api/auth/password-reset/` | Solicita restablecimiento. Envía PIN de 6 dígitos al correo. |
+| POST | `/api/auth/password-reset-confirm/` | Confirma nueva contraseña usando email, `code` (PIN) y nueva password. |
+| POST | `/api/auth/2fa/verify/` | Verifica código 2FA de 6 dígitos para emitir JWT. |
+| POST | `/api/auth/biometric/register/` | Registra huella dactilar. Devuelve `biometric_token`. (Requiere auth previa). |
+| POST | `/api/auth/biometric/login/` | Login biométrico usando `device_id` y `biometric_token`. |
 
 > **Reglas del endpoint `update-languages`:**
 > - **student / premium_student** → solo puede enviar `languages_learning` (idiomas que quiere aprender)
@@ -336,6 +341,8 @@ curl -X POST https://guaman-idiomas-ute.online/api/courses/ \
 | GET | `/api/achievements/` | Catálogo de logros |
 | GET | `/api/my-achievements/` | Logros desbloqueados |
 | GET | `/api/ranking/` | Top 100 por XP |
+| GET/POST/DELETE | `/api/favorites/` | Favoritos (cursos/lecciones) |
+| GET | `/api/activity-logs/` | Registro de actividad |
 
 ### Clases Virtuales
 | Método | URL | Descripción |
@@ -412,6 +419,16 @@ curl -X POST https://guaman-idiomas-ute.online/api/courses/ \
 | POST | `/api/notifications/{id}/read/` | Marcar una como leída |
 | POST | `/api/notifications/read-all/` | Marcar todas como leídas |
 | GET | `/api/notifications/unread-count/` | Cantidad de no leídas |
+| GET/POST/PUT/DELETE | `/api/preferences/` | Preferencias de notificaciones |
+| GET/POST/PUT/DELETE | `/api/announcements/` | Anuncios globales |
+
+### Sistema y Mantenimiento
+| Método | URL | Descripción |
+|---|---|---|
+| GET/POST/PUT/DELETE | `/api/maintenance/` | Registro de mantenimientos (admin) |
+| GET/POST/PUT/DELETE | `/api/backups/` | Historial de backups (admin) |
+| GET/POST/PUT/DELETE | `/api/reports/` | Reportes generales del sistema |
+| GET/POST/PUT/DELETE | `/api/feedbacks/` | Comentarios y feedback de usuarios |
 
 ### Videotutoría — Sesiones en Vivo
 | Método | URL | Acceso |
@@ -432,6 +449,7 @@ curl -X POST https://guaman-idiomas-ute.online/api/courses/ \
 | GET/PATCH | `/api/media-progress/` | Ver / actualizar progreso de reproducción |
 | POST | `/api/media-progress/` | Registrar/iniciar progreso (upsert) |
 | GET | `/api/media-progress/resume/{lesson_id}/` | Reanudar desde donde se dejó |
+| GET/POST/PUT/DELETE | `/api/media/` | Gestión de assets multimedia |
 
 ### Búsqueda Global
 | Método | URL | Descripción |

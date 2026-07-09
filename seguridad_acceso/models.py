@@ -77,3 +77,37 @@ class ApiToken(models.Model):
 
     def __str__(self):
         return f"Token for {self.user} (Active: {self.is_active})"
+
+
+class TwoFactorAuth(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='two_factor_codes')
+    code = models.CharField(max_length=6)
+    is_used = models.BooleanField(default=False)
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'two_factor_auth'
+        verbose_name = 'Two Factor Auth'
+        verbose_name_plural = 'Two Factor Auths'
+
+    def __str__(self):
+        return f"2FA Code for {self.user} - Used: {self.is_used}"
+
+
+class BiometricDevice(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='biometric_devices')
+    device_id = models.CharField(max_length=255, help_text="ID único del dispositivo (ej. UUID)")
+    biometric_token = models.CharField(max_length=255, unique=True, help_text="Token secreto generado por el backend")
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'biometric_devices'
+        verbose_name = 'Biometric Device'
+        verbose_name_plural = 'Biometric Devices'
+        unique_together = ('user', 'device_id')
+
+    def __str__(self):
+        return f"Biometric Device for {self.user} ({self.device_id})"
