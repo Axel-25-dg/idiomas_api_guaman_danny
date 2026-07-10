@@ -1,7 +1,7 @@
 from .auth_views import (
     RegisterView, LoginView, MeView,
     PasswordResetRequestView, PasswordResetConfirmView, UpdateUserLanguagesView,
-    Verify2FAView, RegisterBiometricView, LoginBiometricView
+    RegisterBiometricView, LoginBiometricView
 )
 from .course_views import LanguageViewSet, CourseViewSet, ModuleViewSet, LessonViewSet, ExerciseViewSet
 from .progress_views import (

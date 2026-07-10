@@ -4,7 +4,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from learning.views import (
     RegisterView, LoginView, MeView,
     PasswordResetRequestView, PasswordResetConfirmView, UpdateUserLanguagesView,
-    Verify2FAView, RegisterBiometricView, LoginBiometricView,
+    RegisterBiometricView, LoginBiometricView,
     LanguageViewSet, CourseViewSet, ModuleViewSet, LessonViewSet, ExerciseViewSet,
     UserProgressViewSet, UserStatsViewSet, AchievementViewSet, UserAchievementViewSet,
     RankingViewSet,
@@ -105,7 +105,6 @@ urlpatterns = [
     path('auth/token/refresh/', TokenRefreshView.as_view(),  name='token_refresh'),
     path('auth/me/',            MeView.as_view(),            name='me'),
     path('auth/profile/update-languages/', UpdateUserLanguagesView.as_view(), name='update_languages'),
-    path('auth/2fa/verify/',    Verify2FAView.as_view(),     name='verify_2fa'),
     path('auth/biometric/register/', RegisterBiometricView.as_view(), name='register_biometric'),
     path('auth/biometric/login/', LoginBiometricView.as_view(), name='login_biometric'),
 

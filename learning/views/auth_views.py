@@ -11,10 +11,10 @@ from django.contrib.auth import get_user_model
 from learning.serializers import (
     RegisterSerializer, UserSerializer, MyTokenObtainPairSerializer,
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer,
-    Verify2FASerializer, RegisterBiometricSerializer, LoginBiometricSerializer
+    RegisterBiometricSerializer, LoginBiometricSerializer
 )
-from learning.services.email_service import send_welcome_email, send_2fa_code_email, send_password_reset_pin_email
-from seguridad_acceso.models import PasswordReset, TwoFactorAuth, BiometricDevice
+from learning.services.email_service import send_welcome_email, send_password_reset_pin_email
+from seguridad_acceso.models import PasswordReset, BiometricDevice
 
 User = get_user_model()
 
@@ -50,25 +50,8 @@ class LoginView(TokenObtainPairView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
             
-        user = serializer.user
-        
-        # 2FA Check
-        if hasattr(user, 'profile') and user.profile.is_2fa_enabled:
-            # Generate 6-digit code
-            code = f"{random.randint(100000, 999999)}"
-            TwoFactorAuth.objects.create(
-                user=user,
-                code=code,
-                expires_at=timezone.now() + timedelta(minutes=10)
-            )
-            try:
-                send_2fa_code_email(user, code)
-            except Exception:
-                pass
-            return Response({'requires_2fa': True, 'email': user.email, 'message': 'Se ha enviado un código a tu correo.'}, status=status.HTTP_200_OK)
-            
-        # Normal login (No 2FA)
         data = serializer.validated_data
+        user = serializer.user
         
         # "Remember me" option
         if getattr(serializer, 'remember_me', False):
@@ -78,39 +61,6 @@ class LoginView(TokenObtainPairView):
             data['access'] = str(refresh.access_token)
 
         return Response(data, status=status.HTTP_200_OK)
-
-
-class Verify2FAView(generics.GenericAPIView):
-    serializer_class = Verify2FASerializer
-    permission_classes = [permissions.AllowAny]
-    
-    def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email']
-        code = serializer.validated_data['code']
-        
-        try:
-            user = User.objects.get(email=email)
-            tfa = TwoFactorAuth.objects.filter(user=user, code=code, is_used=False, expires_at__gt=timezone.now()).latest('created_at')
-            tfa.is_used = True
-            tfa.save()
-            
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
-                'user': {
-                    'id': user.id,
-                    'username': user.username,
-                    'email': user.email,
-                    'role': user.role.name if user.role else None,
-                    'is_staff': user.is_staff,
-                    'is_superuser': user.is_superuser,
-                }
-            })
-        except (User.DoesNotExist, TwoFactorAuth.DoesNotExist):
-            return Response({'error': 'Código inválido o expirado.'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class RegisterBiometricView(generics.GenericAPIView):

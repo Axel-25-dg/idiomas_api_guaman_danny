@@ -7,7 +7,7 @@ from .user_serializer import (
     PasswordResetRequestSerializer,
     PasswordResetConfirmSerializer,
     StaffUserSerializer,
-    Verify2FASerializer,
+
     RegisterBiometricSerializer,
     LoginBiometricSerializer,
 )

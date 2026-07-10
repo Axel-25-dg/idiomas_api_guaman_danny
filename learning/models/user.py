@@ -109,7 +109,6 @@ class UserProfile(models.Model):
     )
     native_language = models.CharField(max_length=50, blank=True)
     timezone        = models.CharField(max_length=50, default='America/Guayaquil')
-    is_2fa_enabled  = models.BooleanField(default=False)
     updated_at      = models.DateTimeField(auto_now=True)
 
     languages_learning = models.ManyToManyField(

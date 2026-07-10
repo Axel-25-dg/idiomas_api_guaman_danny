@@ -291,11 +291,7 @@ class StaffUserSerializer(serializers.ModelSerializer):
         return instance
 
 
-# ─── 2FA y Biométrico ─────────────────────────────────────────────────────────
-
-class Verify2FASerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    code = serializers.CharField(max_length=6)
+# ─── Biométrico ────────────────────────────────────────────────────────────────
 
 class RegisterBiometricSerializer(serializers.Serializer):
     device_id = serializers.CharField(max_length=255)
