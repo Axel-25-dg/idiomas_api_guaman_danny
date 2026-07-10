@@ -18,11 +18,12 @@ from learning.pagination import StandardPagination
 
 class UserProgressViewSet(viewsets.ModelViewSet):
     """
-    GET  /api/progress/       — Progreso del usuario autenticado
-    POST /api/progress/       — Registrar progreso en una lección
-    GET  /api/progress/{id}/  — Detalle
-    PUT  /api/progress/{id}/  — Actualizar progreso
-    GET  /api/progress/summary/ — Resumen de progreso (cursos, lecciones, %)
+    GET  /api/progress/            — Progreso del usuario autenticado
+    POST /api/progress/            — Registrar progreso en una lección
+    GET  /api/progress/{id}/       — Detalle
+    PUT  /api/progress/{id}/       — Actualizar progreso (ej: marcar completado)
+    GET  /api/progress/summary/    — Resumen general (XP, rachas, %)
+    GET  /api/progress/by-language/ — Progreso desglosado por idioma
     """
     serializer_class   = UserProgressSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -34,81 +35,101 @@ class UserProgressViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return UserProgress.objects.filter(
             user=self.request.user
-        ).select_related('lesson')
+        ).select_related('lesson__module__course__language')
 
     @action(detail=False, methods=['get'], url_path='summary')
     def summary(self, request):
         """
         GET /api/progress/summary/
-        Resumen de progreso del estudiante.
+        Resumen completo del estudiante: lecciones, cursos, XP, rachas, logros.
         """
         user = request.user
 
-        total_lessons   = Lesson.objects.count()
-        completed       = UserProgress.objects.filter(
-            user=user, status='completed'
-        ).count()
-        in_progress     = UserProgress.objects.filter(
-            user=user, status='in_progress'
-        ).count()
+        total_lessons = Lesson.objects.filter(is_active=True).count()
+        completed     = UserProgress.objects.filter(user=user, status='completed').count()
+        in_progress   = UserProgress.objects.filter(user=user, status='in_progress').count()
 
-        # Cursos con al menos una lección completada
-        courses_started = UserProgress.objects.filter(
-            user=user
-        ).values('lesson__module__course').distinct().count()
+        courses_started   = (
+            UserProgress.objects.filter(user=user)
+            .values('lesson__module__course').distinct().count()
+        )
 
-        # Cursos donde TODAS sus lecciones están completadas
         courses_completed = 0
-        for course in Course.objects.all():
-            course_lessons = Lesson.objects.filter(module__course=course).count()
+        for course in Course.objects.filter(is_active=True):
+            course_lessons = Lesson.objects.filter(module__course=course, is_active=True).count()
             if course_lessons == 0:
                 continue
-            user_completed = UserProgress.objects.filter(
-                user=user,
-                status='completed',
-                lesson__module__course=course,
+            user_done = UserProgress.objects.filter(
+                user=user, status='completed', lesson__module__course=course
             ).count()
-            if user_completed >= course_lessons:
+            if user_done >= course_lessons:
                 courses_completed += 1
 
         percentage = round((completed / total_lessons * 100), 1) if total_lessons > 0 else 0.0
 
-        # Stats del usuario
-        try:
-            stats = UserStats.objects.get(user=user)
-            xp = stats.total_xp
-            streak = stats.current_streak
-            longest = stats.longest_streak
-        except UserStats.DoesNotExist:
-            xp = 0
-            streak = 0
-            longest = 0
-
-        level = (xp // 100) + 1
-        xp_for_next_level = level * 100
-        xp_progress = xp % 100
+        stats, _ = UserStats.objects.get_or_create(user=user)
 
         return Response({
-            'total_lessons':     total_lessons,
-            'lessons_completed': completed,
-            'lessons_in_progress': in_progress,
-            'courses_started':   courses_started,
-            'courses_completed': courses_completed,
-            'percentage':        percentage,
-            'total_xp':          xp,
-            'level':             level,
-            'xp_for_next_level': xp_for_next_level,
-            'xp_progress':       xp_progress,
-            'current_streak':    streak,
-            'longest_streak':    longest,
-            'achievements_count': UserAchievement.objects.filter(user=user).count(),
+            'total_lessons':        total_lessons,
+            'lessons_completed':    completed,
+            'lessons_in_progress':  in_progress,
+            'courses_started':      courses_started,
+            'courses_completed':    courses_completed,
+            'percentage':           percentage,
+            # Gamificación
+            'total_xp':             stats.total_xp,
+            'level':                stats.level,
+            'xp_for_next_level':    stats.xp_for_next_level,
+            'xp_progress_in_level': stats.xp_progress_in_level,
+            'current_streak':       stats.current_streak,
+            'longest_streak':       stats.longest_streak,
+            'last_activity_date':   stats.last_activity_date,
+            'achievements_count':   UserAchievement.objects.filter(user=user).count(),
         })
+
+    @action(detail=False, methods=['get'], url_path='by-language')
+    def by_language(self, request):
+        """
+        GET /api/progress/by-language/
+        Progreso del usuario desglosado por cada idioma que está aprendiendo.
+        Útil para mostrar el panel de idiomas en Flutter.
+        """
+        user = request.user
+
+        # Idiomas que el usuario está aprendiendo
+        if hasattr(user, 'profile'):
+            languages = user.profile.languages_learning.filter(is_active=True)
+        else:
+            from learning.models import Language
+            languages = Language.objects.filter(is_active=True)
+
+        result = []
+        for lang in languages:
+            total = Lesson.objects.filter(
+                module__course__language=lang, is_active=True
+            ).count()
+            done = UserProgress.objects.filter(
+                user=user,
+                status='completed',
+                lesson__module__course__language=lang,
+            ).count()
+            pct = round((done / total * 100), 1) if total > 0 else 0.0
+            result.append({
+                'language_id':   lang.id,
+                'language_name': lang.name,
+                'language_code': lang.code,
+                'flag_url':      lang.flag_image_url,
+                'total_lessons': total,
+                'completed':     done,
+                'percentage':    pct,
+            })
+
+        return Response(result)
 
 
 class UserStatsViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    GET /api/stats/       — Estadísticas del usuario autenticado
-    GET /api/stats/{id}/  — Detalle
+    GET /api/stats/    — Estadísticas del usuario autenticado (objeto único)
     """
     serializer_class   = UserStatsSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -117,39 +138,29 @@ class UserStatsViewSet(viewsets.ReadOnlyModelViewSet):
         return UserStats.objects.filter(user=self.request.user)
 
     def list(self, request, *args, **kwargs):
-        """
-        Override para devolver un objeto único en vez de lista paginada,
-        y agregar campos calculados (level, xp_progress).
-        """
+        """Devuelve un objeto único en vez de lista paginada."""
         stats, _ = UserStats.objects.get_or_create(user=request.user)
-        data = UserStatsSerializer(stats).data
-
-        # Campos calculados
-        xp = stats.total_xp
-        level = (xp // 100) + 1
-        data['level'] = level
-        data['xp_for_next_level'] = level * 100
-        data['xp_progress'] = xp % 100
-
-        return Response(data)
+        serializer = UserStatsSerializer(stats)
+        return Response(serializer.data)
 
 
 class AchievementViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    GET /api/achievements/       — Lista de todos los logros disponibles
-    GET /api/achievements/{id}/  — Detalle del logro
+    GET /api/achievements/        — Catálogo de logros disponibles
+    GET /api/achievements/{id}/   — Detalle
     """
-    queryset           = Achievement.objects.all()
+    queryset           = Achievement.objects.filter(is_active=True)
     serializer_class   = AchievementSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class   = StandardPagination
-    filter_backends    = [OrderingFilter]
+    filter_backends    = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields   = ['trigger_type', 'is_active']
     ordering_fields    = ['required_xp', 'name']
 
 
 class UserAchievementViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    GET /api/my-achievements/  — Logros desbloqueados por el usuario
+    GET /api/my-achievements/  — Logros desbloqueados por el usuario autenticado
     """
     serializer_class   = UserAchievementSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -162,12 +173,43 @@ class UserAchievementViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RankingViewSet(viewsets.ViewSet):
     """
-    GET /api/ranking/ — Top 100 usuarios por XP
+    GET /api/ranking/               — Top 100 global por XP
+    GET /api/ranking/?language=EN   — Top 100 por idioma específico
     """
     permission_classes = [permissions.IsAuthenticated]
 
     def list(self, request):
-        rankings = UserStats.objects.select_related('user').order_by('-total_xp')[:100]
+        language_code = request.query_params.get('language')
+
+        if language_code:
+            # Filtrar usuarios que están aprendiendo ese idioma
+            user_ids = (
+                User.objects.filter(
+                    profile__languages_learning__code__iexact=language_code,
+                    is_active=True,
+                ).values_list('id', flat=True)
+            )
+            rankings = (
+                UserStats.objects
+                .filter(user_id__in=user_ids)
+                .select_related('user')
+                .order_by('-total_xp')[:100]
+            )
+        else:
+            rankings = (
+                UserStats.objects
+                .filter(user__is_active=True)
+                .select_related('user')
+                .order_by('-total_xp')[:100]
+            )
+
+        # Posición del usuario actual
+        my_stats, _ = UserStats.objects.get_or_create(user=request.user)
+        my_position = (
+            UserStats.objects
+            .filter(user__is_active=True, total_xp__gt=my_stats.total_xp)
+            .count() + 1
+        )
 
         data = []
         for position, stat in enumerate(rankings, start=1):
@@ -177,9 +219,15 @@ class RankingViewSet(viewsets.ViewSet):
                 'username':       stat.user.username,
                 'email':          stat.user.email,
                 'total_xp':       stat.total_xp,
-                'level':          (stat.total_xp // 100) + 1,
+                'level':          stat.level,
                 'current_streak': stat.current_streak,
                 'longest_streak': stat.longest_streak,
+                'is_me':          stat.user_id == request.user.id,
             })
 
-        return Response(data)
+        return Response({
+            'my_position': my_position,
+            'my_xp':       my_stats.total_xp,
+            'my_level':    my_stats.level,
+            'ranking':     data,
+        })

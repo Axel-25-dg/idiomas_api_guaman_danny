@@ -186,26 +186,81 @@ class PasswordResetConfirmView(generics.GenericAPIView):
 
 
 class UpdateUserLanguagesView(generics.GenericAPIView):
+    """
+    PATCH /api/auth/profile/update-languages/
+
+    Para estudiantes: actualiza languages_learning (respeta límite del plan).
+    Para profesores:  actualiza languages_teaching.
+
+    Body para estudiante:
+        { "languages_learning": [1, 2, 3] }
+
+    Body para profesor:
+        { "languages_teaching": [1] }
+    """
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def patch(self, request, *args, **kwargs):
         profile = request.user.profile
-        role = request.user.role.name if request.user.role else None
-        
-        from learning.serializers import UserProfileSerializer
-        
-        if role in ['student', 'premium_student']:
-            if 'languages_learning' in request.data:
-                serializer = UserProfileSerializer(profile, data=request.data, partial=True)
-                serializer.is_valid(raise_exception=True)
-                serializer.save()
-                return Response({"message": "Idiomas de aprendizaje actualizados", "data": serializer.data})
-                
-        elif role in ['teacher', 'assistant_teacher']:
-            if 'languages_teaching' in request.data:
-                serializer = UserProfileSerializer(profile, data=request.data, partial=True)
-                serializer.is_valid(raise_exception=True)
-                serializer.save()
-                return Response({"message": "Idiomas de enseñanza actualizados", "data": serializer.data})
+        role    = request.user.role.name if request.user.role else None
 
-        return Response({"error": "No se enviaron campos válidos para el rol asignado o rol no autorizado para esta acción."}, status=status.HTTP_400_BAD_REQUEST)
+        from learning.serializers import UserProfileSerializer
+
+        if role in ['student', 'premium_student', 'student'.lower()]:
+            if 'languages_learning' not in request.data:
+                return Response(
+                    {"error": "Se requiere el campo 'languages_learning'."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            new_ids = request.data.get('languages_learning', [])
+
+            # ── Verificar límite del plan de suscripción ──────────────────
+            from django.utils import timezone as tz
+            from learning.models import UserSubscription
+
+            today   = tz.now().date()
+            sub     = UserSubscription.objects.filter(
+                user=request.user, is_active=True, end_date__gte=today
+            ).select_related('subscription').order_by('-end_date').first()
+
+            max_lang = sub.subscription.max_languages if sub else 1  # plan gratuito → 1
+
+            if max_lang != 0 and len(new_ids) > max_lang:
+                plan_name = sub.subscription.name if sub else 'gratuito'
+                return Response(
+                    {
+                        "error": (
+                            f"Tu plan '{plan_name}' permite aprender máximo {max_lang} idioma(s). "
+                            f"Actualiza tu suscripción para agregar más."
+                        ),
+                        "max_languages": max_lang,
+                        "is_premium": sub is not None,
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            serializer = UserProfileSerializer(profile, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response({
+                "message":      "Idiomas de aprendizaje actualizados.",
+                "data":         serializer.data,
+                "max_languages": max_lang,
+            })
+
+        elif role in ['teacher', 'assistant_teacher']:
+            if 'languages_teaching' not in request.data:
+                return Response(
+                    {"error": "Se requiere el campo 'languages_teaching'."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            serializer = UserProfileSerializer(profile, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response({"message": "Idiomas de enseñanza actualizados.", "data": serializer.data})
+
+        return Response(
+            {"error": "Rol no autorizado para esta acción."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )

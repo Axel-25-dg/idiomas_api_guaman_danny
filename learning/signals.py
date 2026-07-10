@@ -1,145 +1,328 @@
 """
-Signals — Lógica automática de gamificación
-=============================================
+Signals — Lógica automática de gamificación y suscripciones
+=============================================================
 
-1. on_progress_saved:
-   - Cuando un progreso se marca como 'completed':
-     - Suma xp_reward al UserStats.
-     - Actualiza rachas basadas en días reales de actividad.
-
-2. on_stats_updated:
-   - Cuando XP cambia, verifica logros y desbloquea automáticamente.
-
-3. notify_new_lesson:
-   - Envía correo cuando se crea una lección nueva a estudiantes del curso.
+Señales registradas:
+  1. create_user_profile       → Crea UserProfile y UserStats al registrar un usuario.
+  2. on_progress_saved         → Al completar una lección: suma XP + actualiza racha.
+  3. on_stats_updated          → Al cambiar XP: desbloquea logros automáticamente.
+  4. on_order_approved         → Al aprobar una Order: activa UserSubscription y genera Payment.
+  5. push_ws_notification      → Utilidad interna para guardar+enviar notificación por WebSocket.
+  6. notify_achievement_unlock → Al desbloquear un logro: envía notificación en tiempo real.
+  7. notify_new_lesson         → Al crear una lección: notifica a estudiantes del curso.
 """
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, date
+import logging
 
+logger = logging.getLogger(__name__)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# UTILIDAD INTERNA
+# ──────────────────────────────────────────────────────────────────────────────
+
+def push_ws_notification(user_id: int, title: str, message: str, notif_type: str = 'system') -> None:
+    """
+    Guarda una Notification en BD y la envía por WebSocket al grupo del usuario.
+    Se puede llamar desde cualquier parte del backend:
+
+        from learning.signals import push_ws_notification
+        push_ws_notification(user.id, 'Título', 'Cuerpo', 'achievement')
+    """
+    try:
+        from learning.models import Notification
+        notif = Notification.objects.create(
+            user_id=user_id,
+            title=title,
+            message=message,
+            type=notif_type,
+        )
+
+        # Enviar en tiempo real si Channels + Redis están disponibles
+        try:
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            channel_layer = get_channel_layer()
+            if channel_layer is not None:
+                async_to_sync(channel_layer.group_send)(
+                    f'notifications_{user_id}',
+                    {
+                        'type': 'new_notification',
+                        'notification': {
+                            'id':         notif.id,
+                            'title':      notif.title,
+                            'message':    notif.message,
+                            'type':       notif.type,
+                            'is_read':    False,
+                            'created_at': str(notif.created_at),
+                        },
+                    }
+                )
+        except Exception as ws_err:
+            logger.warning('WebSocket push falló (canal no disponible): %s', ws_err)
+
+    except Exception as err:
+        logger.error('push_ws_notification error: %s', err)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 1. Crear UserProfile + UserStats al registrar un usuario nuevo
+# ──────────────────────────────────────────────────────────────────────────────
 
 @receiver(post_save, sender='learning.User')
 def create_user_profile(sender, instance, created, **kwargs):
-    """
-    Crea automáticamente un UserProfile cada vez que se registra un nuevo usuario.
-    """
+    """Crea UserProfile y UserStats automáticamente para cada usuario nuevo."""
     if created:
-        from learning.models import UserProfile
+        from learning.models import UserProfile, UserStats
         UserProfile.objects.get_or_create(user=instance)
+        UserStats.objects.get_or_create(user=instance)
 
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 2. Al guardar progreso: sumar XP y actualizar racha
+# ──────────────────────────────────────────────────────────────────────────────
 
 @receiver(post_save, sender='learning.UserProgress')
 def on_progress_saved(sender, instance, created, **kwargs):
     """
-    Cuando un progreso se marca como 'completed':
-    1. Marca completed_at si no estaba marcado.
-    2. Suma xp_reward de la lección al UserStats.
-    3. Actualiza rachas basadas en la fecha real.
+    Se dispara cada vez que se guarda un UserProgress.
+    Solo actúa cuando status == 'completed' Y completed_at es None
+    (primera vez que se completa la lección).
     """
     if instance.status != 'completed':
         return
 
-    # Solo procesar la primera vez que se completa (completed_at == None)
+    # Evitar procesar dos veces la misma lección
     if instance.completed_at is not None:
         return
 
     from learning.models import UserStats
 
-    now = timezone.now()
+    now  = timezone.now()
+    user = instance.user
 
-    # Marcar completed_at sin volver a disparar el signal
+    # Marcar completed_at SIN re-disparar el signal
     sender.objects.filter(pk=instance.pk).update(completed_at=now)
 
-    user = instance.user
-    xp_reward = instance.lesson.xp_reward
+    # ── XP reward de la lección ───────────────────────────────────────────
+    xp_reward = getattr(instance.lesson, 'xp_reward', 10)
 
-    # Obtener o crear stats
-    stats, created_stats = UserStats.objects.get_or_create(user=user)
+    stats, _ = UserStats.objects.get_or_create(user=user)
 
-    # ── Sumar XP ──────────────────────────────────────────────────────────
-    stats.total_xp += xp_reward
-
-    # ── Actualizar rachas (basado en días) ────────────────────────────────
+    # ── Actualizar racha basada en fecha ─────────────────────────────────
     today = now.date()
 
-    # Buscar la última lección completada ANTES de esta
-    last_completion = sender.objects.filter(
-        user=user,
-        status='completed',
-        completed_at__isnull=False,
-    ).exclude(pk=instance.pk).order_by('-completed_at').first()
-
-    if last_completion and last_completion.completed_at:
-        last_date = last_completion.completed_at.date()
-        diff = (today - last_date).days
-
-        if diff == 1:
-            # Día consecutivo → incrementar racha
-            stats.current_streak += 1
-        elif diff == 0:
-            # Mismo día → no cambiar racha (ya contó)
-            pass
-        else:
-            # Se rompió la racha → reiniciar a 1
-            stats.current_streak = 1
+    if stats.last_activity_date is None:
+        # Primera actividad del usuario
+        stats.current_streak  = 1
     else:
-        # Primera lección completada del usuario
-        stats.current_streak = 1
+        diff = (today - stats.last_activity_date).days
+        if diff == 0:
+            # Mismo día: ya contó, no tocar racha
+            pass
+        elif diff == 1:
+            # Día consecutivo: extender racha
+            stats.current_streak += 1
+        else:
+            # Se rompió la racha: reiniciar
+            stats.current_streak = 1
 
-    # Actualizar mejor racha
+    stats.last_activity_date = today
+
+    # Actualizar mejor racha histórica
     if stats.current_streak > stats.longest_streak:
         stats.longest_streak = stats.current_streak
 
-    stats.save(update_fields=['total_xp', 'current_streak', 'longest_streak'])
+    # Sumar XP DESPUÉS de actualizar streak para que on_stats_updated
+    # vea el streak ya actualizado al verificar logros de racha.
+    stats.total_xp += xp_reward
 
+    stats.save(update_fields=['total_xp', 'current_streak', 'longest_streak', 'last_activity_date'])
+
+    logger.info('XP +%d → usuario %s | total=%d | streak=%d', xp_reward, user.email, stats.total_xp, stats.current_streak)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 3. Al actualizar stats: verificar y desbloquear logros automáticamente
+# ──────────────────────────────────────────────────────────────────────────────
 
 @receiver(post_save, sender='learning.UserStats')
 def on_stats_updated(sender, instance, **kwargs):
     """
-    Cuando el XP del usuario cambia, verifica todos los logros disponibles
-    y desbloquea automáticamente los que ya cumple por XP.
+    Verifica todos los logros activos y desbloquea los que el usuario ya cumple.
+    Soporta logros por XP, por racha de días y por cursos completados.
+    Envía notificación en tiempo real por cada logro desbloqueado.
     """
     from learning.models import Achievement, UserAchievement
 
-    # Obtener logros que el usuario aún no tiene
-    achieved_ids = UserAchievement.objects.filter(user=instance.user).values_list('achievement_id', flat=True)
-    available = Achievement.objects.filter(is_active=True).exclude(id__in=achieved_ids)
+    # IDs que el usuario ya tiene — evitar duplicados
+    owned_ids = set(
+        UserAchievement.objects.filter(user=instance.user)
+        .values_list('achievement_id', flat=True)
+    )
 
-    for achievement in available:
-        if instance.total_xp >= achievement.required_xp:
-            UserAchievement.objects.create(
+    unlockable = Achievement.objects.filter(is_active=True).exclude(id__in=owned_ids)
+
+    for ach in unlockable:
+        earned = False
+
+        if ach.trigger_type == Achievement.TRIGGER_XP:
+            earned = instance.total_xp >= ach.required_xp
+
+        elif ach.trigger_type == Achievement.TRIGGER_STREAK:
+            threshold = ach.required_value or ach.required_xp
+            earned = instance.current_streak >= threshold
+
+        elif ach.trigger_type == Achievement.TRIGGER_COURSE:
+            # Verificar cursos completados del usuario
+            from learning.models import UserProgress, Course, Lesson
+            threshold = ach.required_value or 1
+            completed_courses = 0
+            for course in Course.objects.filter(is_active=True):
+                total  = Lesson.objects.filter(module__course=course, is_active=True).count()
+                if total == 0:
+                    continue
+                done = UserProgress.objects.filter(
+                    user=instance.user,
+                    status='completed',
+                    lesson__module__course=course,
+                ).count()
+                if done >= total:
+                    completed_courses += 1
+            earned = completed_courses >= threshold
+
+        elif ach.trigger_type == Achievement.TRIGGER_MANUAL:
+            # Solo se desbloquea manualmente desde el admin
+            earned = False
+
+        if earned:
+            ua, created = UserAchievement.objects.get_or_create(
                 user=instance.user,
-                achievement=achievement
+                achievement=ach,
             )
+            if created:
+                logger.info('Logro desbloqueado: %s → %s', instance.user.email, ach.name)
+                # Notificar en tiempo real
+                push_ws_notification(
+                    user_id=instance.user.id,
+                    title=f'🏅 Logro desbloqueado: {ach.name}',
+                    message=ach.description,
+                    notif_type='system',
+                )
 
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 4. Al aprobar una Order: activar UserSubscription y crear Payment
+# ──────────────────────────────────────────────────────────────────────────────
+
+@receiver(post_save, sender='learning.Order')
+def on_order_approved(sender, instance, created, **kwargs):
+    """
+    Cuando una Order cambia a status='approved':
+      1. Crea o renueva la UserSubscription del usuario.
+      2. Crea un Payment con status='approved'.
+      3. Envía notificación al usuario por WebSocket + guarda en BD.
+    """
+    if instance.status != 'approved':
+        return
+
+    if not instance.subscription:
+        return
+
+    # Evitar procesar si ya existe un Payment aprobado para esta orden
+    from learning.models import Payment, UserSubscription
+    if Payment.objects.filter(order=instance, status='approved').exists():
+        return
+
+    today        = date.today()
+    plan         = instance.subscription
+    end_date     = today + timedelta(days=plan.duration_days)
+
+    # Crear o renovar la suscripción activa
+    user_sub, sub_created = UserSubscription.objects.update_or_create(
+        user=instance.user,
+        subscription=plan,
+        defaults={
+            'start_date': today,
+            'end_date':   end_date,
+            'is_active':  True,
+        },
+    )
+
+    action_str = 'activada' if sub_created else 'renovada'
+    logger.info('Suscripción %s para %s hasta %s', action_str, instance.user.email, end_date)
+
+    # Registrar Payment
+    payment = Payment.objects.create(
+        user           = instance.user,
+        order          = instance,
+        amount         = instance.total_amount,
+        payment_method = instance.payment_method,
+        status         = 'approved',
+    )
+
+    # Enviar confirmación por correo
+    try:
+        from learning.services.email_service import send_payment_confirmation
+        send_payment_confirmation(instance.user, payment)
+    except Exception as e:
+        logger.warning('Email confirmación de pago falló: %s', e)
+
+    # Notificación en tiempo real
+    push_ws_notification(
+        user_id=instance.user.id,
+        title='✅ Suscripción activada',
+        message=f'Tu plan "{plan.name}" está activo hasta el {end_date.strftime("%d/%m/%Y")}.',
+        notif_type='subscription',
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 5. Notificar a estudiantes cuando se crea una lección nueva
+# ──────────────────────────────────────────────────────────────────────────────
 
 @receiver(post_save, sender='learning.Lesson')
 def notify_new_lesson(sender, instance, created, **kwargs):
     """
-    Notifica a todos los estudiantes inscritos en un curso cuando se añade una nueva lección.
+    Notifica a todos los estudiantes con progreso en el curso cuando
+    se añade una nueva lección.
     """
-    if created:
-        from learning.models import UserProgress, User
-        from learning.services.email_service import send_custom_email
-        from django.conf import settings
+    if not created:
+        return
 
-        course = instance.module.course
+    from learning.models import UserProgress, User
+    from django.conf import settings
 
-        # Obtener IDs de estudiantes que ya tienen progreso en este curso
-        student_ids = UserProgress.objects.filter(
-            lesson__module__course=course
-        ).values_list('user_id', flat=True).distinct()
+    course = instance.module.course
 
-        students = User.objects.filter(id__in=student_ids, is_active=True)
+    student_ids = (
+        UserProgress.objects
+        .filter(lesson__module__course=course)
+        .values_list('user_id', flat=True)
+        .distinct()
+    )
 
-        subject = f"¡Nueva lección en {course.title}!"
-        message = f"Se ha añadido una nueva lección: '{instance.title}'. ¡Ven a verla y sigue aprendiendo!"
-        action_url = f"{settings.FRONTEND_URL}/courses/{course.id}"
+    students = User.objects.filter(id__in=student_ids, is_active=True)
 
-        for student in students:
-            try:
-                send_custom_email(student, subject, message, action_url, "Ver lección")
-            except Exception:
-                pass
+    for student in students:
+        # Notificación en tiempo real + BD
+        push_ws_notification(
+            user_id=student.id,
+            title=f'📚 Nueva lección en {course.title}',
+            message=f'Se añadió: "{instance.title}". ¡Continúa tu aprendizaje!',
+            notif_type='course',
+        )
+
+        # Correo opcional
+        try:
+            from learning.services.email_service import send_custom_email
+            action_url = f'{settings.FRONTEND_URL}/courses/{course.id}'
+            send_custom_email(student, f'Nueva lección en {course.title}',
+                              f'Se añadió la lección "{instance.title}".',
+                              action_url, 'Ver lección')
+        except Exception as e:
+            logger.warning('Email nueva lección falló para %s: %s', student.email, e)

@@ -12,7 +12,7 @@
     <table class="receipt-table">
         <tr>
             <td>Monto</td>
-            <td>${{ payment.amount|default:payment.total_amount }}</td>
+            <td>${{ payment.amount }}</td>
         </tr>
         <tr>
             <td>Método de pago</td>
@@ -24,10 +24,10 @@
         </tr>
         <tr>
             <td>Fecha</td>
-            <td>{{ payment.created_at|date:"d/m/Y H:i" }}</td>
+            <td>{{ payment.transaction_date|date:"d/m/Y H:i" }}</td>
         </tr>
         <tr>
-            <td style="border-bottom: none;">Transacción</td>
+            <td style="border-bottom: none;">Transacción #</td>
             <td style="border-bottom: none; font-size: 13px; color: #718096;">{{ payment.id }}</td>
         </tr>
     </table>
