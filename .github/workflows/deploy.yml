@@ -13,28 +13,34 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Deploying via SSH to VPS
-      uses: appleboy/ssh-action@v1.0.3
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.SERVER_IP }}
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: 22
         script: |
-          cd /root/idiomas_api_guaman_danny
-          
+          cd ~/idiomas_api_guaman_danny
+
           # 1. Traer los últimos cambios desde GitHub
           git pull origin main
-          
+
           # 2. Activar el entorno e instalar nuevas librerías si existen
           source .venv/bin/activate
           pip install -r requirements.txt
-          
+
           # 3. Correr migraciones de Django
           python manage.py migrate
-          
+
           # 4. Recopilar archivos estáticos (APK, logo, admin CSS)
           python manage.py collectstatic --noinput
-          
-          # 5. Reiniciar el servicio real de Gunicorn
-          sudo systemctl restart gunicorn-shopapi.service
+
+          # 5. Reiniciar servicios de forma independiente para evitar bloqueos
+          sudo systemctl restart gunicorn-shopapi.service || echo "Gunicorn failed to restart"
+          sudo systemctl restart daphne-shopapi.service || echo "Daphne failed to restart"
+
+          # 6. Verificación de que ambos levantaron
+          sleep 5
+          systemctl is-active --quiet gunicorn-shopapi.service && echo "Gunicorn OK" || echo "Gunicorn NOT running"
+          systemctl is-active --quiet daphne-shopapi.service && echo "Daphne OK" || echo "Daphne NOT running"
