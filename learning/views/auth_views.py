@@ -6,16 +6,14 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
 
 from learning.serializers import (
     RegisterSerializer, UserSerializer, MyTokenObtainPairSerializer,
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer,
     Verify2FASerializer, RegisterBiometricSerializer, LoginBiometricSerializer
 )
-from learning.services.email_service import send_welcome_email
+from learning.services.email_service import send_welcome_email, send_2fa_code_email, send_password_reset_pin_email
 from seguridad_acceso.models import PasswordReset, TwoFactorAuth, BiometricDevice
 
 User = get_user_model()
@@ -64,13 +62,7 @@ class LoginView(TokenObtainPairView):
                 expires_at=timezone.now() + timedelta(minutes=10)
             )
             try:
-                send_mail(
-                    'Tu código de verificación 2FA',
-                    f'Tu código de acceso es: {code}. Expira en 10 minutos.',
-                    settings.DEFAULT_FROM_EMAIL,
-                    [user.email],
-                    fail_silently=True,
-                )
+                send_2fa_code_email(user, code)
             except Exception:
                 pass
             return Response({'requires_2fa': True, 'email': user.email, 'message': 'Se ha enviado un código a tu correo.'}, status=status.HTTP_200_OK)
@@ -203,13 +195,7 @@ class PasswordResetRequestView(generics.GenericAPIView):
             )
             
             try:
-                send_mail(
-                    'Código para restablecer tu contraseña',
-                    f'Tu código PIN de 6 dígitos es: {code}. Expira en 15 minutos.',
-                    settings.DEFAULT_FROM_EMAIL,
-                    [user.email],
-                    fail_silently=True,
-                )
+                send_password_reset_pin_email(user, code)
             except Exception:
                 pass
         except User.DoesNotExist:

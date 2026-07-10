@@ -56,6 +56,34 @@ def _send_email(recipient, subject, template_name, context, attachments=None):
     return email_log
 
 
+def send_2fa_code_email(user, code):
+    context = {
+        'user': user,
+        'code': code,
+        'subject': 'Tu código de verificación 2FA',
+    }
+    return _send_email(
+        recipient=user.email,
+        subject='Código de verificación — JumpUp UTE',
+        template_name='emails/2fa_code_email.html',
+        context=context,
+    )
+
+
+def send_password_reset_pin_email(user, code):
+    context = {
+        'user': user,
+        'code': code,
+        'subject': 'Restablece tu contraseña',
+    }
+    return _send_email(
+        recipient=user.email,
+        subject='Código para restablecer tu contraseña — JumpUp UTE',
+        template_name='emails/password_reset_pin_email.html',
+        context=context,
+    )
+
+
 def send_welcome_email(user):
     context = {
         'user': user,
