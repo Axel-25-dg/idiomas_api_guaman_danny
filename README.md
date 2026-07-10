@@ -77,7 +77,6 @@ JumpUp UTE es una API REST + WebSocket completa para una plataforma de aprendiza
 | drf-spectacular | 0.27+ | Swagger/Redoc |
 | django-cors-headers | 4.0+ | CORS |
 | django-filter | 23.0+ | Filtros |
-| django-celery-beat | - | Tareas programadas |
 | psycopg2-binary | 2.9+ | PostgreSQL |
 | python-decouple | 3.8+ | Variables de entorno |
 | Pillow | 10.0+ | Procesamiento de imágenes |
@@ -262,16 +261,32 @@ Login: `POST /api/auth/biometric/login/` con `device_id` + `biometric_token`.
 
 Integrado en el sistema de mensajería WebSocket. Se activa automáticamente cuando un hilo tiene 1 solo participante o el asunto contiene "IA".
 
+**Dependencia:** `openai>=1.0.0` (incluida en `requirements.txt`). Requiere `OPENAI_API_KEY` en `.env`.
+
 **Prompt del sistema:**
 > *"Eres el Tutor IA de JumpUp. Tu objetivo es ayudar al estudiante a practicar y aprender idiomas de manera amigable, interactiva y gamificada. Corrige los errores con amabilidad y sugiere mejoras. Sé conciso y directo."*
 
-**Flujo:**
-1. Usuario crea hilo (`POST /api/threads/`)
-2. Conecta WebSocket: `ws://host/ws/chat/{id}/?token=JWT`
-3. Envía: `{"type":"chat_message","body":"How do I say hello?"}`
-4. Backend detecta hilo IA → llama a OpenAI GPT-4o
-5. Respuesta se guarda como mensaje del usuario `tutor_ia`
-6. Se envía de vuelta por WebSocket
+**Flujo desde Flutter:**
+
+```
+1. POST /api/threads/
+   { "subject": "Tutor IA", "participant_ids": [] }
+   → { "id": 15 }
+
+2. Conectar WS: ws://servidor/ws/chat/15/?token=<jwt>
+
+3. Enviar: { "type": "chat_message", "body": "How do I use present perfect?" }
+
+4. Recibir indicador typing del bot:
+   { "type": "typing", "username": "Tutor IA", "is_typing": true }
+
+5. Recibir respuesta real de GPT-4o:
+   { "type": "chat_message", "message": { "sender": "ia@jumpup.com", "body": "..." } }
+```
+
+**Condiciones de activación del Tutor IA:**
+- El `subject` del hilo contiene `"IA"` (ej: `"subject": "Tutor IA"`)
+- O el hilo tiene solo 1 participante
 
 ---
 
@@ -288,13 +303,24 @@ Integrado en el sistema de mensajería WebSocket. Se activa automáticamente cua
 **Eventos WebSocket (Chat):**
 ```
 Cliente → Servidor:
-{ "type": "chat_message", "body": "Hello!" }
+{ "type": "chat_message", "body": "Hola" }
 { "type": "typing", "is_typing": true }
+{ "type": "read_message", "message_id": 42 }
 
 Servidor → Cliente:
-{ "type": "chat_message", "message": {...} }
-{ "type": "typing", "user_id": 1, "is_typing": true }
-{ "type": "read_receipt", "message_id": 42, "reader_id": 2 }
+{ "type": "chat_message", "message": { "id", "sender", "body", "created_at" } }
+{ "type": "typing", "username": "...", "is_typing": true }
+{ "type": "read_receipt", "message_id": 42, "reader_id": 3 }
+```
+
+**Eventos WebSocket (Notificaciones):**
+```
+Al conectar:  { "type": "unread_count", "count": 5 }
+Nuevo evento: { "type": "new_notification", "notification": { "id", "title", "message", "type" } }
+
+Cliente → Servidor:
+{ "type": "mark_read", "notification_id": 12 }
+{ "type": "mark_all_read" }
 ```
 
 ---
@@ -408,25 +434,67 @@ El base template `email_base.html` cuenta con:
 - **Lectura:** Todos autenticados
 - **Escritura:** Teacher/Admin (languages solo Admin)
 
-### Progreso y Gamificación (6 endpoints)
+### Progreso y Gamificación (8 endpoints)
 
 | Método | Endpoint | Descripción |
 |---|---|---|
-| CRUD | `/api/progress/` | Progreso por lección |
-| GET | `/api/progress/summary/` | Resumen completo (total, completado, XP, nivel, rachas) |
-| GET | `/api/stats/` | XP total, racha actual, racha máxima |
-| GET | `/api/achievements/` | Catálogo de logros |
-| GET | `/api/my-achievements/` | Logros desbloqueados |
+| CRUD | `/api/progress/` | Reportar lección completada → dispara XP + racha + logros automáticamente |
+| GET | `/api/progress/summary/` | Resumen completo (XP, nivel, rachas, % completado, logros) |
+| GET | `/api/progress/by-language/` | Progreso desglosado por idioma |
+| GET | `/api/stats/` | XP total, racha actual, racha máxima, `xp_progress_in_level` |
 | GET | `/api/ranking/` | Top 100 por XP (posición, nivel, rachas) |
+| GET | `/api/ranking/?language=EN` | Ranking filtrado por idioma |
+| GET | `/api/achievements/` | Catálogo de logros disponibles |
+| GET | `/api/my-achievements/` | Logros desbloqueados con `icon_url` |
 
-### Suscripciones y Pagos (4 endpoints)
+**Flujo automático al completar una lección:**
+
+```
+POST /api/progress/ { "lesson": 5, "status": "completed", "score": 90 }
+  ↓
+  ✅ Suma xp_reward de la lección a UserStats.total_xp
+  ✅ Actualiza current_streak (si es día nuevo consecutivo)
+  ✅ Actualiza longest_streak si es récord
+  ✅ Registra last_activity_date
+  ✅ Verifica todos los logros activos
+  ✅ Desbloquea automáticamente los logros que cumple (XP, racha, cursos)
+  ✅ Envía notificación WebSocket por cada logro desbloqueado
+  ✅ Flutter recibe en tiempo real: "🏅 Logro desbloqueado: Primer Paso"
+```
+
+### Suscripciones y Pagos (6 endpoints)
 
 | Endpoint | Descripción |
 |---|---|
 | `/api/subscriptions/` | CRUD planes (admin escribe) |
+| `/api/subscriptions/active/` | Solo planes activos (para la tienda Flutter) |
 | `/api/my-subscriptions/` | Mis suscripciones |
-| `/api/payments/` | Mis pagos (envía correo al crear) |
+| `/api/my-subscriptions/current/` | Mi suscripción activa actual |
+| `/api/my-subscriptions/language-limit/` | Cuántos idiomas puedo aprender según el plan |
+| `/api/payments/` | Historial de pagos |
 | `/api/orders/` | Órdenes + `GET /stats/` (admin: revenue total) |
+| `/api/orders/{id}/approve/` | Aprobar orden → activa suscripción automáticamente |
+
+**Flujo de pago desde Flutter:**
+
+```
+1. GET /api/subscriptions/active/        → mostrar planes en la tienda
+2. POST /api/orders/ { "subscription": 2 } → orden creada (status: pending)
+3. [gateway de pago externo procesa el cobro]
+4. POST /api/orders/{id}/approve/        → suscripción activada, payment creado, email enviado
+5. GET /api/my-subscriptions/current/   → confirmar activación
+```
+
+**Flujo automático al aprobar una orden:**
+
+```
+POST /api/orders/{id}/approve/
+  ↓
+  ✅ Crea UserSubscription con fechas calculadas
+  ✅ Crea Payment vinculado
+  ✅ Envía correo de confirmación
+  ✅ Envía notificación WebSocket: "✅ Suscripción activada hasta DD/MM/YYYY"
+```
 
 ### Gestión de Usuarios (2 endpoints, solo admin)
 
@@ -781,6 +849,7 @@ OPENAI_API_KEY=sk-...
 | `0011_notification_type` | 08 Jul | Tipo + uuid en Notification |
 | `0012_2fa` | 09 Jul | ~~is_2fa_enabled~~ (eliminada) |
 | `0013_remove_2fa` | 09 Jul | Elimina campo is_2fa_enabled de UserProfile |
+| `0014_gamification_subscription_improvements` | 10 Jul | Mejoras en gamificación y suscripciones |
 
 **seguridad_acceso:**
 | Migración | Descripción |
@@ -790,9 +859,51 @@ OPENAI_API_KEY=sk-...
 
 ---
 
-## Historial de Cambios
+## Integración Flutter — Guía Rápida
+
+### Dependencias recomendadas (`pubspec.yaml`)
+
+```yaml
+dependencies:
+  dio: ^5.4.0                    # HTTP client con interceptores JWT
+  flutter_secure_storage: ^9.0.0 # Guardar tokens de forma segura
+  web_socket_channel: ^2.4.0     # WebSockets (chat + notificaciones)
+  provider: ^6.1.0               # Estado global
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.19.0                  # i18n de la UI
+```
+
+### Resumen de flujos clave
+
+| Flujo | Endpoint(s) |
+|---|---|
+| Login → guardar tokens | `POST /api/auth/login/` |
+| Completar lección / juego | `POST /api/progress/ { lesson, status, score }` |
+| Chat con Tutor IA | `POST /api/threads/` + `ws://.../ws/chat/{id}/` |
+| Ver ranking | `GET /api/ranking/` o `GET /api/ranking/?language=EN` |
+| Comprar plan | `GET /api/subscriptions/active/` → `POST /api/orders/` → `POST /api/orders/{id}/approve/` |
+| Notificaciones en vivo | `ws://.../ws/notifications/?token=JWT` |
+
+---
+
+## Pendientes de configuración del servidor
+
+| Pendiente | Descripción |
+|---|---|
+| **Redis** | `redis-server` corriendo + `REDIS_HOST=127.0.0.1` en `.env`. Sin Redis los WebSockets funcionan solo con 1 instancia (InMemory, configurado para dev) |
+| **Daphne en producción** | `daphne config.asgi:application --bind 0.0.0.0 --port 8001` vía systemd |
+| **Nginx WebSocket** | Agregar `proxy_pass` con headers `Upgrade` y `Connection` para rutas `/ws/` |
+| **Gateway de pago** | Stripe/PayPal para procesar cobros reales (el backend ya tiene el flujo `Order → approve`) |
+
+---
+
+
 
 ### v1.5 — 10 Jul 2026
+- **Instalada dependencia `openai>=1.0.0`** en `requirements.txt`
+  - El Tutor IA (GPT-4o) ya estaba implementado en el consumer WebSocket pero faltaba la librería
+  - Verificado end-to-end: 15/15 checks pasando
 - **Mejora del pipeline CI/CD (`deploy.yml`)**
   - Migrado a `appleboy/ssh-action@master` para usar siempre la versión estable más reciente
   - Ruta del proyecto cambiada a `~/idiomas_api_guaman_danny` (portabilidad, no depende de `/root/`)
@@ -800,6 +911,7 @@ OPENAI_API_KEY=sk-...
   - Añadido reinicio de **Daphne** (`daphne-shopapi.service`) que antes no se incluía
   - Añadida pausa `sleep 5` y validación con `systemctl is-active` para verificar que ambos servicios levantaron correctamente
   - El estado final de cada servicio queda visible en los logs de GitHub Actions
+- **README actualizado** con guía de integración Flutter, flujos automáticos del backend y pendientes de configuración del servidor
 
 ### v1.4 — 09 Jul 2026
 - **Eliminada verificación en dos pasos (2FA)**
