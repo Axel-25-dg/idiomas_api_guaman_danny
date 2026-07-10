@@ -657,15 +657,52 @@ server {
 
 ### CI/CD (GitHub Actions)
 
-Cada push a `main` ejecuta automáticamente:
+Archivo: `.github/workflows/deploy.yml`
+
+Cada push a `main` ejecuta automáticamente los siguientes pasos vía `appleboy/ssh-action`:
+
+```yaml
+uses: appleboy/ssh-action@master
 ```
+
+**Pasos del script de despliegue:**
+
+```bash
+# 1. Actualizar el código
+cd ~/idiomas_api_guaman_danny
 git pull origin main
+
+# 2. Instalar dependencias
 source .venv/bin/activate
 pip install -r requirements.txt
+
+# 3. Aplicar migraciones
 python manage.py migrate
+
+# 4. Recopilar archivos estáticos
 python manage.py collectstatic --noinput
-sudo systemctl restart gunicorn-shopapi.service
+
+# 5. Reiniciar servicios (independientes para evitar bloqueos)
+sudo systemctl restart gunicorn-shopapi.service || echo "Gunicorn failed to restart"
+sudo systemctl restart daphne-shopapi.service   || echo "Daphne failed to restart"
+
+# 6. Verificar que ambos servicios levantaron correctamente
+sleep 5
+systemctl is-active --quiet gunicorn-shopapi.service && echo "Gunicorn OK" || echo "Gunicorn NOT running"
+systemctl is-active --quiet daphne-shopapi.service   && echo "Daphne OK"   || echo "Daphne NOT running"
 ```
+
+**Secretos requeridos en GitHub → Settings → Secrets:**
+
+| Secret | Descripción |
+|---|---|
+| `SERVER_IP` | IP pública del VPS |
+| `SERVER_USER` | Usuario SSH (ej. `root`) |
+| `SSH_PRIVATE_KEY` | Clave privada RSA para autenticación SSH |
+
+**Comportamiento ante fallos:**
+- Si Gunicorn o Daphne fallan al reiniciar, el workflow **no se aborta**; imprime el error y continúa.
+- Al final del script se valida el estado de cada servicio y el resultado queda visible en los logs de GitHub Actions.
 
 ---
 
@@ -754,6 +791,15 @@ OPENAI_API_KEY=sk-...
 ---
 
 ## Historial de Cambios
+
+### v1.5 — 10 Jul 2026
+- **Mejora del pipeline CI/CD (`deploy.yml`)**
+  - Migrado a `appleboy/ssh-action@master` para usar siempre la versión estable más reciente
+  - Ruta del proyecto cambiada a `~/idiomas_api_guaman_danny` (portabilidad, no depende de `/root/`)
+  - Reinicio de servicios con `|| echo` para que un fallo en Gunicorn o Daphne no aborte el deploy
+  - Añadido reinicio de **Daphne** (`daphne-shopapi.service`) que antes no se incluía
+  - Añadida pausa `sleep 5` y validación con `systemctl is-active` para verificar que ambos servicios levantaron correctamente
+  - El estado final de cada servicio queda visible en los logs de GitHub Actions
 
 ### v1.4 — 09 Jul 2026
 - **Eliminada verificación en dos pasos (2FA)**
