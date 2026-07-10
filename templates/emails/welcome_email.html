@@ -1,20 +1,32 @@
 {% extends 'emails/email_base.html' %}
 {% block content %}
-<p>Hola <strong>{{ user.username }}</strong>,</p>
-<p>¡Bienvenido a <strong>JumpUp UTE</strong>! Estamos muy emocionados de que hayas decidido unirte a nuestra comunidad de aprendizaje de idiomas.</p>
-<p>Nuestra plataforma está diseñada para ayudarte a alcanzar tus metas lingüísticas de una manera interactiva y efectiva. Ya puedes comenzar a explorar nuestros cursos y recursos exclusivos.</p>
-
-<div class="button-container">
-    <a href="{{ frontend_url }}/login" class="button">Empezar a Aprender</a>
+<div style="text-align: center; margin-bottom: 25px;">
+    <span class="badge">🎉 Nuevo miembro</span>
 </div>
 
-<p>Aquí tienes algunas cosas que puedes hacer ahora mismo:</p>
-<ul style="color: #4a5568; line-height: 1.8;">
-    <li>Completar tu perfil con una foto personalizada.</li>
-    <li>Explorar los cursos disponibles según tu nivel (A1 - C2).</li>
-    <li>Realizar tus primeros ejercicios y ganar puntos de experiencia (XP).</li>
+<p>Hola <strong>{{ user.username }}</strong>,</p>
+<p>¡Bienvenido a <strong>JumpUp UTE</strong>! Estamos emocionados de que te unas a nuestra comunidad de aprendizaje de idiomas.</p>
+
+<div class="info-box info-box-success">
+    <h3>🚀 Tu viaje comienza aquí</h3>
+    <p style="margin-bottom: 0;">Nuestra plataforma está diseñada para ayudarte a alcanzar tus metas lingüísticas de forma interactiva, gamificada y efectiva.</p>
+</div>
+
+<h2>Primeros pasos</h2>
+<ul class="feature-list">
+    <li>Completa tu perfil con una foto y tus idiomas de interés</li>
+    <li>Explora cursos organizados por nivel (A1 — C2)</li>
+    <li>Realiza ejercicios y gana puntos de experiencia (XP)</li>
+    <li>Desbloquea logros y compite en el ranking</li>
+    <li>Practica con nuestro Tutor IA en tiempo real</li>
 </ul>
 
-<p>Si tienes alguna duda durante tu proceso, nuestro equipo de soporte está aquí para ayudarte.</p>
-<p>¡Mucho éxito en tu camino hacia el dominio de un nuevo idioma!</p>
+<div class="button-container">
+    <a href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}/login" class="button">Comenzar a Aprender</a>
+</div>
+
+<p style="font-size: 14px; color: #718096; text-align: center;">
+    ¿Necesitas ayuda? Nuestro equipo de soporte está aquí para ti.<br>
+    ¡Mucho éxito en tu camino hacia el dominio de un nuevo idioma!
+</p>
 {% endblock %}

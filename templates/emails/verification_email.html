@@ -1,6 +1,23 @@
 {% extends 'emails/email_base.html' %}
 {% block content %}
-<p>Hola {{ user.username }},</p>
-<p>Para completar tu registro, por favor verifica tu correo electrónico haciendo clic en el siguiente enlace:</p>
-<p><a href="{{ verification_link }}" class="button">Verificar correo</a></p>
+<div style="text-align: center; margin-bottom: 25px;">
+    <span class="badge">📧 Verificación de correo</span>
+</div>
+
+<p>Hola <strong>{{ user.username }}</strong>,</p>
+<p>Gracias por registrarte en <strong>JumpUp UTE</strong>. Para completar tu registro y empezar a aprender, verifica tu dirección de correo electrónico.</p>
+
+<div class="info-box info-box-info" style="text-align: center;">
+    <div style="font-size: 36px; margin-bottom: 10px;">✅</div>
+    <p style="margin-bottom: 0;">Haz clic en el botón para confirmar tu cuenta y acceder a todos los cursos.</p>
+</div>
+
+<div class="button-container">
+    <a href="{{ verification_link }}" class="button">Verificar mi Correo</a>
+</div>
+
+<p style="font-size: 13px; color: #718096; word-break: break-all;">
+    ¿El botón no funciona? Copia este enlace en tu navegador:<br>
+    <a href="{{ verification_link }}">{{ verification_link }}</a>
+</p>
 {% endblock %}

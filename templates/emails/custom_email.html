@@ -2,7 +2,7 @@
 {% block content %}
 <p>Hola <strong>{{ user.username }}</strong>,</p>
 
-<div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 25px; border-radius: 8px; margin: 20px 0;">
+<div class="info-box" style="font-size: 16px; line-height: 1.8;">
     {{ message|linebreaks }}
 </div>
 
@@ -12,7 +12,8 @@
 </div>
 {% endif %}
 
-<p style="font-size: 14px; color: #718096;">
-    Este es un mensaje personalizado enviado por el equipo académico de JumpUp UTE.
+<div class="divider"></div>
+<p style="font-size: 14px; color: #718096; text-align: center;">
+    Este es un mensaje enviado por el equipo académico de <strong>JumpUp UTE</strong>.
 </p>
 {% endblock %}

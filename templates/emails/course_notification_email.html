@@ -1,6 +1,22 @@
 {% extends 'emails/email_base.html' %}
 {% block content %}
-<p>Hola {{ user.username }},</p>
-<p>Hay una nueva actualización en el curso <strong>{{ course.title }}</strong>:</p>
-<p>{{ message }}</p>
+<div style="text-align: center; margin-bottom: 25px;">
+    <span class="badge">📚 Nueva actualización</span>
+</div>
+
+<p>Hola <strong>{{ user.username }}</strong>,</p>
+<p>Hay novedades en el curso <strong>{{ course.title }}</strong>:</p>
+
+<div class="info-box info-box-info" style="text-align: center;">
+    <div style="font-size: 32px; margin-bottom: 10px;">📖</div>
+    {{ message|linebreaks }}
+</div>
+
+<div class="button-container">
+    <a href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}/courses/{{ course.id }}" class="button">Ir al Curso</a>
+</div>
+
+<p style="font-size: 14px; color: #718096; text-align: center;">
+    Sigue practicando, cada lección te acerca más a tu meta.
+</p>
 {% endblock %}
