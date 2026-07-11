@@ -233,3 +233,10 @@ STRIPE_WEBHOOK_SECRET    = config('STRIPE_WEBHOOK_SECRET', default='')
 
 # ─── CORS ────────────────────────────────────────────────────────────────────
 CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=True, cast=bool)
+
+# ─── CSRF — dominios de confianza para el admin de Django ────────────────────
+# Necesario cuando DEBUG=False y se usa HTTPS
+CSRF_TRUSTED_ORIGINS = config(
+    'CSRF_TRUSTED_ORIGINS',
+    default='https://guaman-idiomas-ute.online,https://www.guaman-idiomas-ute.online',
+).split(',')

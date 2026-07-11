@@ -57,9 +57,60 @@ class UserSubscriptionViewSet(viewsets.ModelViewSet):
     ordering_fields    = ['start_date', 'end_date']
 
     def get_queryset(self):
+        # Admin ve TODAS las suscripciones; usuario normal solo las suyas
+        if self.request.user.is_superuser or (
+            hasattr(self.request.user, 'role') and
+            getattr(self.request.user.role, 'name', '') == 'admin'
+        ):
+            return UserSubscription.objects.select_related(
+                'user', 'subscription'
+            ).all()
         return UserSubscription.objects.filter(
             user=self.request.user
         ).select_related('subscription')
+
+    @action(detail=False, methods=['get'], url_path='summary',
+            permission_classes=[IsAdmin])
+    def summary(self, request):
+        """
+        GET /api/my-subscriptions/summary/   — Solo admin
+        Resumen global: activas, expiradas, canceladas, revenue.
+        """
+        from django.db.models import Sum
+        today = timezone.now().date()
+
+        activas    = UserSubscription.objects.filter(is_active=True,  end_date__gte=today).count()
+        expiradas  = UserSubscription.objects.filter(is_active=True,  end_date__lt=today).count()
+        canceladas = UserSubscription.objects.filter(is_active=False).count()
+        total      = UserSubscription.objects.count()
+
+        # Revenue de órdenes aprobadas
+        revenue = Order.objects.filter(
+            status='approved'
+        ).aggregate(total=Sum('total_amount'))['total'] or 0
+
+        # Por plan
+        from learning.models import Subscription as Sub
+        por_plan = []
+        for plan in Sub.objects.filter(is_active=True):
+            count = UserSubscription.objects.filter(
+                subscription=plan, is_active=True, end_date__gte=today
+            ).count()
+            por_plan.append({
+                'plan_id':   plan.id,
+                'plan_name': plan.name,
+                'price':     str(plan.price),
+                'activas':   count,
+            })
+
+        return Response({
+            'total':          total,
+            'activas':        activas,
+            'expiradas':      expiradas,
+            'canceladas':     canceladas,
+            'revenue_total':  float(revenue),
+            'por_plan':       por_plan,
+        })
 
     @action(detail=False, methods=['get'], url_path='current')
     def current(self, request):
