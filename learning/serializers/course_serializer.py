@@ -24,17 +24,28 @@ class CourseSerializer(serializers.ModelSerializer):
         extra_kwargs = {'image': {'write_only': True}}
 
     def get_image_url(self, obj):
+        """
+        Devuelve siempre una URL absoluta.
+        Prioridad: imagen subida (ImageField) → image_file (MediaFile) → None
+        """
         request = self.context.get('request')
+        from django.conf import settings
+        domain = getattr(settings, 'SITE_DOMAIN', 'https://guaman-idiomas-ute.online').rstrip('/')
+
+        # 1. Imagen subida directamente al curso
         if obj.image:
-            if request:
-                return request.build_absolute_uri(obj.image.url)
-            # Fallback: construir URL absoluta con el dominio de producción
-            from django.conf import settings
-            domain = getattr(settings, 'SITE_DOMAIN', 'https://guaman-idiomas-ute.online')
             url = obj.image.url
-            if url.startswith('/'):
-                return f'{domain.rstrip("/")}{url}'
-            return url
+            if request:
+                return request.build_absolute_uri(url)
+            return url if url.startswith('http') else f'{domain}{url}'
+
+        # 2. Imagen via MediaFile (image_file FK)
+        if obj.image_file and obj.image_file.file:
+            url = obj.image_file.file.url
+            if request:
+                return request.build_absolute_uri(url)
+            return url if url.startswith('http') else f'{domain}{url}'
+
         return None
 
     def validate_image(self, value):

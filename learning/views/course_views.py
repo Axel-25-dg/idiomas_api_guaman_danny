@@ -42,7 +42,9 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     Profesores pueden crear y editar cursos.
     """
-    queryset           = Course.objects.select_related('language').all()
+    queryset           = Course.objects.select_related(
+        'language', 'image_file'   # image_file para get_image_url
+    ).all()
     serializer_class   = CourseSerializer
     permission_classes = [IsTeacherOrAdminOrReadOnly]
     pagination_class   = StandardPagination
