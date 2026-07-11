@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from django.db.models import Count, Q
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 
 from learning.models import (
     UserProgress, UserStats, Achievement, UserAchievement,
@@ -178,6 +179,12 @@ class RankingViewSet(viewsets.ViewSet):
     """
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter('language', OpenApiTypes.STR, description='Código de idioma (ej: EN, ES)'),
+        ],
+        responses={200: OpenApiTypes.OBJECT},
+    )
     def list(self, request):
         language_code = request.query_params.get('language')
 

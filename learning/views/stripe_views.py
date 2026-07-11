@@ -33,7 +33,11 @@ from learning.serializers import OrderSerializer
 
 logger = logging.getLogger(__name__)
 
-stripe.api_key = settings.STRIPE_SECRET_KEY
+
+def _get_stripe():
+    """Inicializa stripe con la clave del settings en tiempo de ejecución, no de importación."""
+    stripe.api_key = settings.STRIPE_SECRET_KEY
+    return stripe
 
 
 class CreatePaymentIntentView(APIView):
@@ -94,7 +98,8 @@ class CreatePaymentIntentView(APIView):
         # amount en centavos: $19.99 → 1999
         amount_cents = int(plan.price * 100)
 
-        intent = stripe.PaymentIntent.create(
+        _stripe = _get_stripe()
+        intent = _stripe.PaymentIntent.create(
             amount=amount_cents,
             currency='usd',
             metadata={

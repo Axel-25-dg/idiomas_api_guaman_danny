@@ -7,11 +7,13 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 
 from learning.serializers import (
     RegisterSerializer, UserSerializer, MyTokenObtainPairSerializer,
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer,
-    RegisterBiometricSerializer, LoginBiometricSerializer
+    RegisterBiometricSerializer, LoginBiometricSerializer,
+    UserProfileSerializer,
 )
 from learning.services.email_service import send_welcome_email, send_password_reset_pin_email
 from seguridad_acceso.models import PasswordReset, BiometricDevice
@@ -198,15 +200,16 @@ class UpdateUserLanguagesView(generics.GenericAPIView):
     Body para profesor:
         { "languages_teaching": [1] }
     """
+    serializer_class   = UserProfileSerializer          # requerido por drf-spectacular
     permission_classes = [permissions.IsAuthenticated]
 
     def patch(self, request, *args, **kwargs):
+        from learning.models import UserSubscription
+
         profile = request.user.profile
         role    = request.user.role.name if request.user.role else None
 
-        from learning.serializers import UserProfileSerializer
-
-        if role in ['student', 'premium_student', 'student'.lower()]:
+        if role in ['student', 'premium_student']:
             if 'languages_learning' not in request.data:
                 return Response(
                     {"error": "Se requiere el campo 'languages_learning'."},
@@ -215,12 +218,9 @@ class UpdateUserLanguagesView(generics.GenericAPIView):
 
             new_ids = request.data.get('languages_learning', [])
 
-            # ── Verificar límite del plan de suscripción ──────────────────
-            from django.utils import timezone as tz
-            from learning.models import UserSubscription
-
-            today   = tz.now().date()
-            sub     = UserSubscription.objects.filter(
+            # Verificar límite del plan de suscripción
+            today = timezone.now().date()
+            sub = UserSubscription.objects.filter(
                 user=request.user, is_active=True, end_date__gte=today
             ).select_related('subscription').order_by('-end_date').first()
 
@@ -244,8 +244,8 @@ class UpdateUserLanguagesView(generics.GenericAPIView):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response({
-                "message":      "Idiomas de aprendizaje actualizados.",
-                "data":         serializer.data,
+                "message":       "Idiomas de aprendizaje actualizados.",
+                "data":          serializer.data,
                 "max_languages": max_lang,
             })
 

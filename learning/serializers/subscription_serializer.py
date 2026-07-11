@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 from rest_framework import serializers
-from learning.models import Subscription, UserSubscription, Payment, Order
+from learning.models import Subscription, UserSubscription, Payment
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
@@ -62,35 +62,3 @@ class PaymentSerializer(serializers.ModelSerializer):
             except Exception:
                 pass
         return instance
-
-
-class OrderSerializer(serializers.ModelSerializer):
-    user_email        = serializers.EmailField(source='user.email', read_only=True)
-    subscription_name = serializers.CharField(source='subscription.name', read_only=True)
-
-    class Meta:
-        model  = Order
-        fields = [
-            'id', 'user', 'user_email',
-            'subscription', 'subscription_name',
-            'total_amount', 'payment_method', 'status',
-            'created_at', 'updated_at', 'notes',
-        ]
-        read_only_fields = ['user', 'created_at', 'updated_at']
-
-    def validate(self, attrs):
-        """
-        Si no se pasa total_amount y hay una suscripción,
-        se toma el precio del plan automáticamente.
-        """
-        plan = attrs.get('subscription')
-        if plan and not attrs.get('total_amount'):
-            attrs['total_amount'] = plan.price
-        return attrs
-
-    def create(self, validated_data):
-        validated_data['user'] = self.context['request'].user
-        # Si total_amount no llegó, tomarlo del plan
-        if not validated_data.get('total_amount') and validated_data.get('subscription'):
-            validated_data['total_amount'] = validated_data['subscription'].price
-        return super().create(validated_data)
