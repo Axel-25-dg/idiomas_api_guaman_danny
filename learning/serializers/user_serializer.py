@@ -2,7 +2,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
 
-from learning.models import User, UserProfile, Role, ROLE_STUDENT, Language
+from learning.models import User, UserProfile, Role, ROLE_STUDENT, ROLE_TEACHER, Language
 
 
 # ─── Serializers de solo lectura ──────────────────────────────────────────────
@@ -141,16 +141,18 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     """
     Registro público.
-    - Siempre crea con role='student', is_staff=False, is_superuser=False.
-    - Crea UserProfile automáticamente.
-    - Nunca permite role=NULL.
+    - Permite configurar username, email, password, first_name, last_name, y role ('student' o 'teacher').
+    - Crea UserProfile automáticamente y guarda los nombres.
     """
     password  = serializers.CharField(write_only=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True)
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
+    role = serializers.CharField(required=False, default='student')
 
     class Meta:
         model  = User
-        fields = ['username', 'email', 'password', 'password2']
+        fields = ['username', 'email', 'password', 'password2', 'first_name', 'last_name', 'role']
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:
@@ -159,13 +161,19 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop('password2')
+        first_name = validated_data.pop('first_name', '')
+        last_name = validated_data.pop('last_name', '')
+        role_name = validated_data.pop('role', 'student')
 
-        # Obtener el rol student — garantizado por la migración 0002
+        if role_name not in ['student', 'teacher']:
+            role_name = 'student'
+
+        # Obtener el rol correspondiente
         try:
-            student_role = Role.objects.get(name=ROLE_STUDENT)
+            assigned_role = Role.objects.get(name=role_name)
         except Role.DoesNotExist:
             raise serializers.ValidationError(
-                'El rol "student" no existe en la base de datos. '
+                f'El rol "{role_name}" no existe en la base de datos. '
                 'Ejecuta las migraciones pendientes.'
             )
 
@@ -174,14 +182,22 @@ class RegisterSerializer(serializers.ModelSerializer):
             username=validated_data['username'],
             email=validated_data['email'],
             password=validated_data['password'],
+            first_name=first_name,
+            last_name=last_name,
         )
 
         # Asignamos role — User.save() sincroniza is_staff e is_superuser
-        user.role = student_role
+        user.role = assigned_role
         user.save()
 
-        # Perfil vacío
-        UserProfile.objects.get_or_create(user=user)
+        # Perfil con first_name/last_name
+        UserProfile.objects.get_or_create(
+            user=user,
+            defaults={
+                'first_name': first_name,
+                'last_name': last_name,
+            }
+        )
 
         return user
 

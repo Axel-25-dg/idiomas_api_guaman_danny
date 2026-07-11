@@ -22,6 +22,11 @@ User = get_user_model()
 
 
 class RegisterView(generics.CreateAPIView):
+    """
+    POST /api/auth/register/
+    Registro público.
+    No requiere autenticación.
+    """
     serializer_class   = RegisterSerializer
     permission_classes = [permissions.AllowAny]
 
@@ -35,9 +40,25 @@ class RegisterView(generics.CreateAPIView):
         except Exception:
             pass
 
+        # Generar tokens JWT para iniciar sesión automáticamente
+        from rest_framework_simplejwt.tokens import RefreshToken
+        refresh = RefreshToken.for_user(user)
+        refresh['is_staff'] = user.is_staff
+        refresh['is_superuser'] = user.is_superuser
+        refresh['role'] = user.role.name if user.role else None
+
         return Response({
             'message': 'Usuario registrado exitosamente.',
-            'user': UserSerializer(user).data,
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'role': user.role.name if user.role else None,
+                'is_staff': user.is_staff,
+                'is_superuser': user.is_superuser,
+            }
         }, status=201)
 
 
