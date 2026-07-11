@@ -26,7 +26,15 @@ class CourseSerializer(serializers.ModelSerializer):
     def get_image_url(self, obj):
         request = self.context.get('request')
         if obj.image:
-            return request.build_absolute_uri(obj.image.url) if request else obj.image.url
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            # Fallback: construir URL absoluta con el dominio de producción
+            from django.conf import settings
+            domain = getattr(settings, 'SITE_DOMAIN', 'https://guaman-idiomas-ute.online')
+            url = obj.image.url
+            if url.startswith('/'):
+                return f'{domain.rstrip("/")}{url}'
+            return url
         return None
 
     def validate_image(self, value):

@@ -231,6 +231,9 @@ STRIPE_SECRET_KEY        = config('STRIPE_SECRET_KEY', default='')
 STRIPE_PUBLISHABLE_KEY   = config('STRIPE_PUBLISHABLE_KEY', default='')
 STRIPE_WEBHOOK_SECRET    = config('STRIPE_WEBHOOK_SECRET', default='')
 
+# Dominio público del servidor (usado para construir URLs absolutas de media)
+SITE_DOMAIN = config('SITE_DOMAIN', default='https://guaman-idiomas-ute.online')
+
 # ─── CORS ────────────────────────────────────────────────────────────────────
 CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=True, cast=bool)
 
