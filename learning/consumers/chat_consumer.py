@@ -172,6 +172,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
         return updated > 0
 
     async def _process_ai_message(self, user_text, thread_id):
+        # 0. Verificar que el usuario tenga plan con acceso a la IA
+        if not await self._user_has_ai_access():
+            await self.send_json({
+                'type':   'error',
+                'detail': 'Necesitas una suscripción activa para usar el Tutor IA.',
+                'code':   'subscription_required',
+            })
+            return
+
         # 1. Indicador de "Escribiendo..."
         await self.channel_layer.group_send(
             self.room_name,
@@ -225,6 +234,22 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return thread.participants.count() == 1 or 'IA' in (thread.subject or '').upper()
         except Exception:
             return False
+
+    @database_sync_to_async
+    def _user_has_ai_access(self):
+        """
+        Devuelve True si el usuario tiene una suscripción activa y vigente.
+        Los planes con max_languages == 0 (ilimitado) o cualquier plan activo
+        dan acceso al Tutor IA.
+        """
+        from django.utils import timezone
+        from learning.models import UserSubscription
+        today = timezone.now().date()
+        return UserSubscription.objects.filter(
+            user=self.user,
+            is_active=True,
+            end_date__gte=today,
+        ).exists()
 
     @database_sync_to_async
     def _save_ai_message(self, body, thread_id):

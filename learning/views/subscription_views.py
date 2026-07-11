@@ -42,11 +42,12 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
 
 class UserSubscriptionViewSet(viewsets.ModelViewSet):
     """
-    GET  /api/my-subscriptions/              — Suscripciones del usuario autenticado
-    POST /api/my-subscriptions/              — Suscribirse a un plan (crea Order + activa)
-    GET  /api/my-subscriptions/{id}/         — Detalle
-    GET  /api/my-subscriptions/current/      — Suscripción activa actual
-    GET  /api/my-subscriptions/language-limit/ — Cuántos idiomas puede aprender
+    GET    /api/my-subscriptions/              — Suscripciones del usuario autenticado
+    POST   /api/my-subscriptions/              — Suscribirse a un plan (crea Order + activa)
+    GET    /api/my-subscriptions/{id}/         — Detalle
+    GET    /api/my-subscriptions/current/      — Suscripción activa actual
+    GET    /api/my-subscriptions/language-limit/ — Cuántos idiomas puede aprender
+    POST   /api/my-subscriptions/{id}/cancel/  — Cancelar suscripción activa
     """
     serializer_class   = UserSubscriptionSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -105,6 +106,38 @@ class UserSubscriptionViewSet(viewsets.ModelViewSet):
             'current_languages': current_count,
             'is_premium':        sub is not None,
             'can_add_more':      max_lang == 0 or current_count < max_lang,
+        })
+
+    @action(detail=True, methods=['post'], url_path='cancel')
+    def cancel(self, request, pk=None):
+        """
+        POST /api/my-subscriptions/{id}/cancel/
+        Cancela la suscripción del usuario autenticado.
+        La suscripción queda inactiva pero los días pagados siguen corriendo
+        hasta end_date (no se hace reembolso automático).
+        """
+        sub = self.get_object()
+
+        if not sub.is_active:
+            return Response(
+                {'detail': 'Esta suscripción ya está cancelada.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        today = timezone.now().date()
+        if sub.end_date < today:
+            return Response(
+                {'detail': 'Esta suscripción ya expiró.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        sub.is_active = False
+        sub.save(update_fields=['is_active'])
+
+        return Response({
+            'detail': 'Suscripción cancelada. El acceso se mantiene hasta la fecha de vencimiento.',
+            'end_date': sub.end_date.isoformat(),
+            'subscription': UserSubscriptionSerializer(sub).data,
         })
 
 
