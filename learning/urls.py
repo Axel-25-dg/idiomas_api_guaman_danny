@@ -28,6 +28,7 @@ from learning.views import (
     GlobalSearchView,
 )
 from learning.views import system_views, interaction_views, notification_views
+from learning.views.stripe_views import CreatePaymentIntentView, StripeWebhookView
 
 router = DefaultRouter()
 
@@ -122,4 +123,8 @@ urlpatterns = [
 
     # ── Búsqueda global ──────────────────────────────────────────────────────
     path('search/', GlobalSearchView.as_view(), name='search'),
+
+    # ── Stripe ───────────────────────────────────────────────────────────────
+    path('stripe/create-payment-intent/', CreatePaymentIntentView.as_view(), name='stripe-create-intent'),
+    path('stripe/webhook/',               StripeWebhookView.as_view(),        name='stripe-webhook'),
 ]

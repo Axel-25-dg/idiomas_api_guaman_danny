@@ -226,5 +226,10 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
 }
 
+# ─── Stripe ──────────────────────────────────────────────────────────────────
+STRIPE_SECRET_KEY        = config('STRIPE_SECRET_KEY', default='')
+STRIPE_PUBLISHABLE_KEY   = config('STRIPE_PUBLISHABLE_KEY', default='')
+STRIPE_WEBHOOK_SECRET    = config('STRIPE_WEBHOOK_SECRET', default='')
+
 # ─── CORS ────────────────────────────────────────────────────────────────────
 CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=True, cast=bool)

@@ -474,21 +474,26 @@ POST /api/progress/ { "lesson": 5, "status": "completed", "score": 90 }
 | `/api/payments/` | Historial de pagos |
 | `/api/orders/` | Órdenes + `GET /stats/` (admin: revenue total) |
 | `/api/orders/{id}/approve/` | Aprobar orden → activa suscripción automáticamente |
+| `/api/stripe/create-payment-intent/` | Crea PaymentIntent en Stripe y devuelve `client_secret` a Flutter |
+| `/api/stripe/webhook/` | Recibe eventos de Stripe — activa suscripción al confirmar pago |
 
 **Flujo de pago desde Flutter:**
 
 ```
-1. GET /api/subscriptions/active/        → mostrar planes en la tienda
-2. POST /api/orders/ { "subscription": 2 } → orden creada (status: pending)
-3. [gateway de pago externo procesa el cobro]
-4. POST /api/orders/{id}/approve/        → suscripción activada, payment creado, email enviado
-5. GET /api/my-subscriptions/current/   → confirmar activación
+1. GET /api/subscriptions/active/                → mostrar planes en la tienda
+2. POST /api/stripe/create-payment-intent/       → obtener client_secret + order_id
+   { "subscription_id": 2, "payment_method": "credit_card" }
+3. Flutter muestra hoja de pago nativa (Stripe Payment Sheet)
+4. Usuario ingresa tarjeta → Stripe procesa el cobro
+5. Stripe llama automáticamente a /api/stripe/webhook/
+   → orden aprobada → suscripción activada → email enviado
+6. GET /api/my-subscriptions/current/            → confirmar activación en Flutter
 ```
 
 **Flujo automático al aprobar una orden:**
 
 ```
-POST /api/orders/{id}/approve/
+POST /api/orders/{id}/approve/  (o vía webhook de Stripe)
   ↓
   ✅ Crea UserSubscription con fechas calculadas
   ✅ Crea Payment vinculado
@@ -723,6 +728,44 @@ server {
 }
 ```
 
+### Stripe (Pasarela de Pagos — modo TEST)
+
+El proyecto usa Stripe en **modo test** para demostrar el flujo de pago sin procesar dinero real.
+
+**Endpoints añadidos:**
+
+| Endpoint | Descripción |
+|---|---|
+| `POST /api/stripe/create-payment-intent/` | Crea la intención de pago y devuelve `client_secret` |
+| `POST /api/stripe/webhook/` | Recibe confirmaciones de Stripe y activa la suscripción |
+
+**Cómo obtener las claves TEST (gratis):**
+1. Crea cuenta en [dashboard.stripe.com](https://dashboard.stripe.com) (no requiere datos bancarios para modo test)
+2. Ve a **Developers → API Keys**
+3. Copia `Publishable key` (`pk_test_...`) y `Secret key` (`sk_test_...`)
+4. Ve a **Developers → Webhooks → Add endpoint**
+   - URL: `https://guaman-idiomas-ute.online/api/stripe/webhook/`
+   - Eventos: `payment_intent.succeeded`, `payment_intent.payment_failed`
+5. Copia el **Signing secret** (`whsec_...`)
+6. Añade las tres claves al `.env` del servidor
+
+**Tarjetas de prueba (sin dinero real):**
+
+| Número | Resultado |
+|---|---|
+| `4242 4242 4242 4242` | ✅ Pago exitoso |
+| `4000 0000 0000 9995` | ❌ Tarjeta rechazada |
+| `4000 0025 0000 3155` | 🔐 Requiere autenticación 3D Secure |
+
+Fecha: cualquiera futura · CVV: cualquier 3 dígitos
+
+**Para probar el webhook en local (desarrollo):**
+```bash
+# Instalar Stripe CLI: https://stripe.com/docs/stripe-cli
+stripe listen --forward-to localhost:8000/api/stripe/webhook/
+# Te genera un whsec_... temporal para poner en .env
+```
+
 ### CI/CD (GitHub Actions)
 
 Archivo: `.github/workflows/deploy.yml`
@@ -828,6 +871,13 @@ CORS_ALLOW_ALL_ORIGINS=True
 
 # OpenAI (Tutor IA)
 OPENAI_API_KEY=sk-...
+
+# Stripe — modo TEST para demo del flujo de pagos
+# Obtén tus claves en https://dashboard.stripe.com/apikeys
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+# Obtén el webhook secret en https://dashboard.stripe.com/webhooks
+STRIPE_WEBHOOK_SECRET=whsec_...
 ```
 
 ---
@@ -899,6 +949,17 @@ dependencies:
 ---
 
 
+
+### v1.6 — 10 Jul 2026
+- **Integración Stripe (modo TEST)**
+  - Añadido `stripe>=8.0.0` a `requirements.txt`
+  - Nueva vista `stripe_views.py` con dos endpoints:
+    - `POST /api/stripe/create-payment-intent/` — crea PaymentIntent y devuelve `client_secret` a Flutter
+    - `POST /api/stripe/webhook/` — recibe evento `payment_intent.succeeded` y aprueba la orden automáticamente
+  - Variables `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` añadidas a `settings.py` y `.env`
+  - Endpoint `POST /api/my-subscriptions/{id}/cancel/` para cancelación de suscripción por el usuario
+  - Verificación de suscripción activa en el Tutor IA WebSocket (bloquea si no hay plan vigente)
+  - README y `.env.example` actualizados con documentación completa del flujo de pagos
 
 ### v1.5 — 10 Jul 2026
 - **Instalada dependencia `openai>=1.0.0`** en `requirements.txt`
