@@ -17,13 +17,12 @@ class MediaFileSerializer(serializers.ModelSerializer):
             'id', 'uuid', 'original_name', 'file', 'mime_type', 'extension',
             'size', 'width', 'height', 'file_url', 'thumbnail_url',
             'storage_provider', 'status', 'uploaded_by', 'uploaded_by_email',
-            'created_at',
+            'created_at', 'percentage', # <--- ¡Añadido aquí!
         ]
         read_only_fields = [
             'uuid', 'mime_type', 'extension', 'size', 'width', 'height',
             'checksum', 'status', 'uploaded_by', 'created_at',
         ]
-
     def get_file_url(self, obj):
         return obj.file_url
 

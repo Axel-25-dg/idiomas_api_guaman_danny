@@ -150,7 +150,7 @@ class EmailLogAdmin(admin.ModelAdmin):
 
 @admin.register(BroadcastEmail)
 class BroadcastEmailAdmin(admin.ModelAdmin):
-    list_display   = ['id', 'subject', 'audience', 'sent_badge', 'sent_count', 'created_at']
+    list_display = ['id', 'subject', 'audience', 'sent_count', 'is_sent', 'sent_at', 'created_at']
     list_filter    = ['is_sent', 'audience']
     search_fields  = ['subject']
     readonly_fields = ['is_sent', 'sent_count', 'sent_at', 'created_at', 'updated_at']
