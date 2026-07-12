@@ -12,11 +12,18 @@ from learning.models import (
     Classroom, ClassroomEnrollment,
     Certificate,
     TeacherResource,
+    MediaFile,
     EmailLog,
     BroadcastEmail,
     MaintenanceLog, BackupHistory, UserActivityLog, UserFavorite,
-    Report, UserFeedback, MediaAsset, Announcement, 
-    Notification, UserNotificationPreference
+    Report, UserFeedback, MediaAsset, Announcement,
+    Notification, UserNotificationPreference,
+    MessageThread, Message, MessageAttachment,
+    ForumCategory, ForumThread, ForumPost, ForumReaction, ForumReport,
+    SocialPost, SocialComment, SocialReaction,
+    LiveSession, LiveParticipant,
+    MediaProgress,
+    Catalogo, Carrito, CarritoItem, OrdenCompra, OrdenDetalle,
 )
 from learning.services.email_service import send_custom_email, send_broadcast_email
 
@@ -232,3 +239,133 @@ class MaintenanceLogAdmin(admin.ModelAdmin):
 @admin.register(BackupHistory)
 class BackupHistoryAdmin(admin.ModelAdmin):
     list_display = ['id', 'backup_name', 'size']
+
+# ─── ARCHIVOS MULTIMEDIA ──────────────────────────────────────────────────────
+@admin.register(MediaFile)
+class MediaFileAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'original_name', 'mime_type', 'extension', 'size', 'status', 'storage_provider', 'uploaded_by']
+    list_filter   = ['status', 'storage_provider', 'mime_type']
+    search_fields = ['original_name', 'uploaded_by__email']
+    readonly_fields = ['uuid', 'checksum', 'created_at']
+
+# ─── MENSAJERÍA ───────────────────────────────────────────────────────────────
+@admin.register(MessageThread)
+class MessageThreadAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'subject', 'is_active', 'created_at', 'updated_at']
+    list_filter   = ['is_active']
+    search_fields = ['subject']
+    readonly_fields = ['created_at', 'updated_at']
+
+@admin.register(Message)
+class MessageAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'sender', 'thread', 'is_read', 'created_at']
+    list_filter   = ['is_read']
+    search_fields = ['sender__email', 'body']
+    readonly_fields = ['created_at', 'read_at']
+
+@admin.register(MessageAttachment)
+class MessageAttachmentAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'message', 'attachment_type', 'filename', 'created_at']
+    list_filter   = ['attachment_type']
+    search_fields = ['filename']
+
+# ─── FORO ─────────────────────────────────────────────────────────────────────
+@admin.register(ForumCategory)
+class ForumCategoryAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'name', 'order', 'is_active', 'created_at']
+    list_filter   = ['is_active']
+    search_fields = ['name']
+
+@admin.register(ForumThread)
+class ForumThreadAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'title', 'category', 'author', 'is_pinned', 'is_closed', 'views', 'created_at']
+    list_filter   = ['is_pinned', 'is_closed', 'category']
+    search_fields = ['title', 'author__email']
+    readonly_fields = ['created_at', 'updated_at']
+
+@admin.register(ForumPost)
+class ForumPostAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'author', 'thread', 'is_deleted', 'created_at']
+    list_filter   = ['is_deleted']
+    search_fields = ['author__email', 'body']
+    readonly_fields = ['created_at', 'updated_at']
+
+@admin.register(ForumReaction)
+class ForumReactionAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'user', 'post', 'reaction', 'created_at']
+    list_filter   = ['reaction']
+    search_fields = ['user__email']
+
+@admin.register(ForumReport)
+class ForumReportAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'reporter', 'post', 'status', 'created_at']
+    list_filter   = ['status']
+    search_fields = ['reporter__email', 'reason']
+
+# ─── FEED SOCIAL ──────────────────────────────────────────────────────────────
+@admin.register(SocialPost)
+class SocialPostAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'author', 'post_type', 'is_public', 'created_at']
+    list_filter   = ['post_type', 'is_public']
+    search_fields = ['author__email', 'content']
+    readonly_fields = ['created_at', 'updated_at']
+
+@admin.register(SocialComment)
+class SocialCommentAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'author', 'post', 'created_at']
+    search_fields = ['author__email', 'body']
+
+@admin.register(SocialReaction)
+class SocialReactionAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'user', 'post', 'reaction', 'created_at']
+    list_filter   = ['reaction']
+    search_fields = ['user__email']
+
+# ─── SESIONES EN VIVO ─────────────────────────────────────────────────────────
+@admin.register(LiveSession)
+class LiveSessionAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'title', 'teacher', 'course', 'status', 'scheduled_at', 'max_students']
+    list_filter   = ['status']
+    search_fields = ['title', 'teacher__email']
+    readonly_fields = ['created_at']
+
+@admin.register(LiveParticipant)
+class LiveParticipantAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'student', 'session', 'is_active', 'joined_at']
+    list_filter   = ['is_active']
+    search_fields = ['student__email']
+
+# ─── PROGRESO MULTIMEDIA ──────────────────────────────────────────────────────
+@admin.register(MediaProgress)
+class MediaProgressAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'user', 'lesson', 'position_sec', 'duration_sec', 'completed', 'last_watched']
+    list_filter   = ['completed']
+    search_fields = ['user__email', 'lesson__title']
+
+# ─── VENTAS / E-COMMERCE ──────────────────────────────────────────────────────
+@admin.register(Catalogo)
+class CatalogoAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'titulo', 'tipo', 'precio', 'curso', 'creado_at']
+    list_filter   = ['tipo']
+    search_fields = ['titulo']
+
+@admin.register(Carrito)
+class CarritoAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'estudiante', 'creado_at']
+    search_fields = ['estudiante__email']
+
+@admin.register(CarritoItem)
+class CarritoItemAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'carrito', 'producto', 'cantidad']
+    search_fields = ['carrito__estudiante__email', 'producto__titulo']
+
+@admin.register(OrdenCompra)
+class OrdenCompraAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'estudiante', 'total', 'estado', 'fecha_creacion']
+    list_filter   = ['estado']
+    search_fields = ['estudiante__email']
+
+@admin.register(OrdenDetalle)
+class OrdenDetalleAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'orden', 'producto', 'precio_unitario']
+    search_fields = ['orden__estudiante__email', 'producto__titulo']
