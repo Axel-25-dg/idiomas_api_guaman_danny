@@ -154,22 +154,13 @@ def get_user_level_info(user) -> dict:
 
 
 def has_active_subscription(user) -> bool:
-    """Retorna True si el usuario tiene una suscripción activa y vigente."""
-    from learning.models import UserSubscription
-    today = timezone.now().date()
-    return UserSubscription.objects.filter(
-        user=user, is_active=True, end_date__gte=today
-    ).exists()
+    """Retorna True para simular suscripción activa bajo modelo de venta directa."""
+    return True
 
 
 def get_max_languages(user) -> int:
     """
-    Devuelve cuántos idiomas puede aprender el usuario según su plan.
-    0 = ilimitado.
+    Devuelve cuántos idiomas puede aprender el usuario.
+    0 = ilimitado (venta directa).
     """
-    from learning.models import UserSubscription
-    today = timezone.now().date()
-    sub = UserSubscription.objects.filter(
-        user=user, is_active=True, end_date__gte=today
-    ).select_related('subscription').order_by('-end_date').first()
-    return sub.subscription.max_languages if sub else 1
+    return 0

@@ -147,6 +147,8 @@ class Exercise(models.Model):
     question_text = models.TextField()
     exercise_type = models.CharField(max_length=20, choices=EXERCISE_TYPE_CHOICES, db_index=True)
     correct_answer = models.TextField()
+    options = models.JSONField(null=True, blank=True, help_text="Opciones para opción múltiple")
+    audio_url = models.URLField(max_length=500, null=True, blank=True, help_text="URL para ejercicios de tipo listening")
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(null=True, blank=True)

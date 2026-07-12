@@ -8,9 +8,7 @@ from .progress_views import (
     UserProgressViewSet, UserStatsViewSet, AchievementViewSet,
     UserAchievementViewSet, RankingViewSet,
 )
-from .subscription_views import (
-    SubscriptionViewSet, UserSubscriptionViewSet, PaymentViewSet, OrderViewSet
-)
+# (Suscripciones eliminadas — modelo de venta directa)
 from .user_views import StaffUserViewSet, AdminStudentViewSet
 from .classroom_views import ClassroomViewSet
 from .certificate_views import CertificateViewSet
@@ -31,3 +29,4 @@ from .social_views import SocialPostViewSet, SocialCommentViewSet, SocialReactio
 from .live_session_views import LiveSessionViewSet
 from .media_views import MediaFileViewSet, MediaProgressViewSet
 from .search_views import GlobalSearchView
+from .sales_views import CatalogoViewSet, CarritoViewSet, OrdenCompraViewSet

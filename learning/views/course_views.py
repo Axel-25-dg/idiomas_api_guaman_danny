@@ -9,6 +9,7 @@ from learning.models import Language, Course, Module, Lesson, Exercise, UserProg
 from learning.serializers import (
     LanguageSerializer, CourseSerializer,
     ModuleSerializer, LessonSerializer, ExerciseSerializer,
+    ExerciseSafeSerializer, ExerciseValidationSerializer,
 )
 from learning.pagination import StandardPagination
 from learning.permissions import IsTeacherOrAdminOrReadOnly, IsAdminOrReadOnly
@@ -132,3 +133,60 @@ class ExerciseViewSet(viewsets.ModelViewSet):
     filter_backends    = [DjangoFilterBackend, SearchFilter]
     filterset_fields   = ['lesson', 'exercise_type']
     search_fields      = ['question_text']
+
+    def get_serializer_class(self):
+        if self.action in ['list', 'retrieve']:
+            user = self.request.user
+            # Si el usuario no es staff (profesor o administrador), usar serializador seguro (sin respuesta_correcta)
+            if user and not user.is_staff:
+                return ExerciseSafeSerializer
+        elif self.action == 'validar':
+            return ExerciseValidationSerializer
+        return super().get_serializer_class()
+
+    @action(detail=True, methods=['post'], url_path='validar', permission_classes=[permissions.IsAuthenticated])
+    def validar(self, request, pk=None):
+        """
+        POST /api/exercises/{id}/validar/
+        Valida la respuesta del usuario contra respuesta_correcta y actualiza racha/XP.
+        """
+        exercise = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        respuesta_usuario = serializer.validated_data['respuesta_usuario'].strip()
+
+        es_correcto = (respuesta_usuario.lower() == exercise.correct_answer.strip().lower())
+
+        if es_correcto:
+            retroalimentacion = "¡Excelente trabajo! Respuesta correcta."
+            user = request.user
+            from learning.models import UserStats
+            from datetime import date, timedelta
+            
+            stats, created = UserStats.objects.get_or_create(user=user)
+            hoy = date.today()
+            
+            # Lógica de Rachas (Streak Counter)
+            if stats.last_activity_date == hoy:
+                # Ya hizo una actividad hoy: la racha no aumenta pero se otorga XP de recompensa
+                stats.total_xp += 10
+            elif stats.last_activity_date == hoy - timedelta(days=1):
+                # Actividad consecutiva: incrementa racha y suma XP
+                stats.current_streak += 1
+                if stats.current_streak > stats.longest_streak:
+                    stats.longest_streak = stats.current_streak
+                stats.total_xp += 10
+                stats.last_activity_date = hoy
+            else:
+                # No hubo actividad ayer: racha se reinicia a 1
+                stats.current_streak = 1
+                stats.total_xp += 10
+                stats.last_activity_date = hoy
+            stats.save()
+        else:
+            retroalimentacion = f"Respuesta incorrecta. La respuesta correcta era: '{exercise.correct_answer}'."
+
+        return Response({
+            'es_correcto': es_correcto,
+            'retroalimentacion': retroalimentacion
+        })

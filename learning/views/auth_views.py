@@ -225,8 +225,6 @@ class UpdateUserLanguagesView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def patch(self, request, *args, **kwargs):
-        from learning.models import UserSubscription
-
         profile = request.user.profile
         role    = request.user.role.name if request.user.role else None
 
@@ -239,27 +237,8 @@ class UpdateUserLanguagesView(generics.GenericAPIView):
 
             new_ids = request.data.get('languages_learning', [])
 
-            # Verificar límite del plan de suscripción
-            today = timezone.now().date()
-            sub = UserSubscription.objects.filter(
-                user=request.user, is_active=True, end_date__gte=today
-            ).select_related('subscription').order_by('-end_date').first()
-
-            max_lang = sub.subscription.max_languages if sub else 1  # plan gratuito → 1
-
-            if max_lang != 0 and len(new_ids) > max_lang:
-                plan_name = sub.subscription.name if sub else 'gratuito'
-                return Response(
-                    {
-                        "error": (
-                            f"Tu plan '{plan_name}' permite aprender máximo {max_lang} idioma(s). "
-                            f"Actualiza tu suscripción para agregar más."
-                        ),
-                        "max_languages": max_lang,
-                        "is_premium": sub is not None,
-                    },
-                    status=status.HTTP_403_FORBIDDEN,
-                )
+            # Venta directa: sin límite de idiomas por suscripción
+            max_lang = 0
 
             serializer = UserProfileSerializer(profile, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)

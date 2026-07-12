@@ -242,14 +242,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         Los planes con max_languages == 0 (ilimitado) o cualquier plan activo
         dan acceso al Tutor IA.
         """
-        from django.utils import timezone
-        from learning.models import UserSubscription
-        today = timezone.now().date()
-        return UserSubscription.objects.filter(
-            user=self.user,
-            is_active=True,
-            end_date__gte=today,
-        ).exists()
+        # Venta directa: acceso global al tutor IA habilitado
+        return True
 
     @database_sync_to_async
     def _save_ai_message(self, body, thread_id):

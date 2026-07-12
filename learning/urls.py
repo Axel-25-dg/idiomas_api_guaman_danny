@@ -8,7 +8,7 @@ from learning.views import (
     LanguageViewSet, CourseViewSet, ModuleViewSet, LessonViewSet, ExerciseViewSet,
     UserProgressViewSet, UserStatsViewSet, AchievementViewSet, UserAchievementViewSet,
     RankingViewSet,
-    SubscriptionViewSet, UserSubscriptionViewSet, PaymentViewSet, OrderViewSet,
+    # (Suscripciones eliminadas)
     StaffUserViewSet, AdminStudentViewSet,
     ClassroomViewSet, CertificateViewSet, TeacherResourceViewSet,
     StudentDashboardView, TeacherDashboardView, AdminDashboardView,
@@ -26,9 +26,10 @@ from learning.views import (
     LiveSessionViewSet,
     MediaFileViewSet, MediaProgressViewSet,
     GlobalSearchView,
+    CatalogoViewSet, CarritoViewSet, OrdenCompraViewSet,
 )
 from learning.views import system_views, interaction_views, notification_views
-from learning.views.stripe_views import CreatePaymentIntentView, StripeWebhookView
+# Stripe/Suscripciones eliminados — se usa venta directa
 
 router = DefaultRouter()
 
@@ -46,11 +47,12 @@ router.register(r'achievements',    AchievementViewSet,     basename='achievemen
 router.register(r'my-achievements', UserAchievementViewSet, basename='my-achievement')
 router.register(r'ranking',         RankingViewSet,         basename='ranking')
 
-# ── Pagos / Suscripciones ────────────────────────────────────────────────────
-router.register(r'subscriptions',    SubscriptionViewSet,     basename='subscription')
-router.register(r'my-subscriptions', UserSubscriptionViewSet, basename='my-subscription')
-router.register(r'payments',         PaymentViewSet,          basename='payment')
-router.register(r'orders',           OrderViewSet,            basename='order')
+# ── Pagos / Suscripciones (Deprecado - Transición a Ventas Directas) ─────────
+
+# ── E-Commerce y Ventas Directas ─────────────────────────────────────────────
+router.register(r'catalogo',        CatalogoViewSet,         basename='catalogo')
+router.register(r'carrito',         CarritoViewSet,          basename='carrito')
+router.register(r'ordenes-compra',  OrdenCompraViewSet,      basename='orden-compra')
 
 # ── Gestión de usuarios ──────────────────────────────────────────────────────
 router.register(r'users',           StaffUserViewSet,    basename='users')
@@ -124,7 +126,5 @@ urlpatterns = [
     # ── Búsqueda global ──────────────────────────────────────────────────────
     path('search/', GlobalSearchView.as_view(), name='search'),
 
-    # ── Stripe ───────────────────────────────────────────────────────────────
-    path('stripe/create-payment-intent/', CreatePaymentIntentView.as_view(), name='stripe-create-intent'),
-    path('stripe/webhook/',               StripeWebhookView.as_view(),        name='stripe-webhook'),
+    # ── Stripe (Eliminado - se usa venta directa) ───────────────────────────
 ]

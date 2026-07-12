@@ -13,16 +13,14 @@ from .user_serializer import (
 )
 from .course_serializer import (
     LanguageSerializer, CourseSerializer, ModuleSerializer,
-    LessonSerializer, ExerciseSerializer,
+    LessonSerializer, ExerciseSerializer, ExerciseSafeSerializer,
+    ExerciseValidationSerializer,
 )
 from .progress_serializer import (
     UserProgressSerializer, UserStatsSerializer,
     AchievementSerializer, UserAchievementSerializer,
 )
-from .subscription_serializer import (
-    SubscriptionSerializer, UserSubscriptionSerializer, PaymentSerializer,
-)
-from .order_serializer import OrderSerializer
+# (Serializadores de suscripciones eliminados — venta directa)
 from .classroom_serializer import (
     ClassroomSerializer, ClassroomDetailSerializer,
     ClassroomEnrollmentSerializer, JoinClassroomSerializer,
@@ -64,3 +62,7 @@ from .live_session_serializer import (
     LiveSessionSerializer, LiveSessionDetailSerializer, LiveParticipantSerializer,
 )
 from .media_serializer import MediaFileSerializer, MediaProgressSerializer
+from .sales_serializer import (
+    CatalogoSerializer, CarritoItemSerializer, CarritoSerializer,
+    OrdenDetalleSerializer, OrdenCompraSerializer,
+)

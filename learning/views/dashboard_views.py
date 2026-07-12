@@ -13,7 +13,7 @@ from rest_framework import permissions
 from learning.models import (
     User, UserStats, UserProgress, UserAchievement, Certificate,
     Classroom, ClassroomEnrollment, Lesson, Course,
-    TeacherResource, Subscription, UserSubscription, Payment,
+    TeacherResource, OrdenCompra,
 )
 from learning.permissions import IsTeacherOrAdmin, IsAdmin
 
@@ -129,8 +129,7 @@ class AdminDashboardView(APIView):
         ).count()
         courses = Course.objects.count()
         classrooms = Classroom.objects.count()
-        subscriptions = UserSubscription.objects.filter(is_active=True).count()
-        payments = Payment.objects.filter(status='approved').count()
+        ventas = OrdenCompra.objects.filter(estado='pagada').count()
         certificates = Certificate.objects.filter(status='issued').count()
 
         return Response({
@@ -139,7 +138,6 @@ class AdminDashboardView(APIView):
             'students':       students,
             'courses':        courses,
             'classrooms':     classrooms,
-            'subscriptions':  subscriptions,
-            'payments':       payments,
+            'ventas_directas': ventas,
             'certificates':   certificates,
         })

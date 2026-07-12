@@ -81,4 +81,16 @@ class ExerciseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Exercise
-        fields = ['id', 'lesson', 'lesson_title', 'question_text', 'exercise_type', 'correct_answer']
+        fields = ['id', 'lesson', 'lesson_title', 'question_text', 'exercise_type', 'correct_answer', 'options', 'audio_url']
+
+
+class ExerciseSafeSerializer(serializers.ModelSerializer):
+    lesson_title = serializers.CharField(source='lesson.title', read_only=True)
+
+    class Meta:
+        model = Exercise
+        fields = ['id', 'lesson', 'lesson_title', 'question_text', 'exercise_type', 'options', 'audio_url']
+
+
+class ExerciseValidationSerializer(serializers.Serializer):
+    respuesta_usuario = serializers.CharField(required=True, allow_blank=True)

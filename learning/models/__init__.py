@@ -2,7 +2,7 @@ from .user import Role, User, UserProfile, ROLE_ADMIN, ROLE_TEACHER, ROLE_STUDEN
 from .language import Language
 from .course import Course, Module, Lesson, Exercise
 from .progress import UserProgress, UserStats, Achievement, UserAchievement
-from .subscription import Subscription, UserSubscription, Payment, Order
+#from .subscription import Subscription, UserSubscription, Payment, Order
 from .classroom import Classroom, ClassroomEnrollment
 from .certificate import Certificate
 from .resource import TeacherResource
@@ -19,6 +19,7 @@ from .maintenance import MaintenanceLog, BackupHistory
 from .messaging import MessageThread, Message, MessageAttachment
 from .forum import ForumCategory, ForumThread, ForumPost, ForumReaction, ForumReport
 from .social import SocialPost, SocialComment, SocialReaction
+from .sales import Catalogo, Carrito, CarritoItem, Orden as OrdenCompra, OrdenDetalle
 from .live_session import LiveSession, LiveParticipant
 from .media_progress import MediaProgress
 
@@ -35,6 +36,8 @@ __all__ = [
     'UserProgress', 'UserStats', 'Achievement', 'UserAchievement',
     # Suscripciones y pagos
     'Subscription', 'UserSubscription', 'Payment', 'Order',
+    # E-Commerce y Ventas Directas
+    'Catalogo', 'Carrito', 'CarritoItem', 'OrdenCompra', 'OrdenDetalle',
     # Clases y recursos
     'Classroom', 'ClassroomEnrollment',
     'Certificate',

@@ -47,9 +47,19 @@ class LiveSessionViewSet(viewsets.ModelViewSet):
         return LiveSessionSerializer
 
     def get_queryset(self):
-        return LiveSession.objects.select_related(
+        user = self.request.user
+        queryset = LiveSession.objects.select_related(
             'teacher', 'course'
-        ).prefetch_related('participants').all()
+        ).prefetch_related('participants')
+
+        if user and user.is_authenticated and not user.is_staff:
+            from learning.models import ClassroomEnrollment
+            enrolled_course_ids = ClassroomEnrollment.objects.filter(
+                student=user, is_active=True
+            ).values_list('classroom__course_id', flat=True)
+            queryset = queryset.filter(course_id__in=enrolled_course_ids)
+
+        return queryset.all()
 
     def get_permissions(self):
         if self.action in ('create', 'update', 'partial_update', 'destroy', 'start', 'end'):

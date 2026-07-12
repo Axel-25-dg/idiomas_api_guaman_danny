@@ -39,6 +39,30 @@ class UserStats(models.Model):
         return f'Stats de {self.user.email} - XP: {self.total_xp}'
 
     @property
+    def global_score(self):
+        return self.total_xp
+
+    @global_score.setter
+    def global_score(self, value):
+        self.total_xp = value
+
+    @property
+    def streak_days(self):
+        return self.current_streak
+
+    @streak_days.setter
+    def streak_days(self, value):
+        self.current_streak = value
+
+    @property
+    def ultima_actividad_fecha(self):
+        return self.last_activity_date
+
+    @ultima_actividad_fecha.setter
+    def ultima_actividad_fecha(self, value):
+        self.last_activity_date = value
+
+    @property
     def level(self):
         """Nivel calculado: cada 100 XP sube un nivel."""
         return (self.total_xp // 100) + 1

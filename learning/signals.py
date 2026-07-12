@@ -1,15 +1,16 @@
 """
-Signals — Lógica automática de gamificación y suscripciones
+Signals — Lógica automática de gamificación y ventas directas
 =============================================================
 
 Señales registradas:
   1. create_user_profile       → Crea UserProfile y UserStats al registrar un usuario.
   2. on_progress_saved         → Al completar una lección: suma XP + actualiza racha.
   3. on_stats_updated          → Al cambiar XP: desbloquea logros automáticamente.
-  4. on_order_approved         → Al aprobar una Order: activa UserSubscription y genera Payment.
+  4. (ELIMINADO)               → Suscripciones eliminadas. Ahora se usa venta directa (Orden).
   5. push_ws_notification      → Utilidad interna para guardar+enviar notificación por WebSocket.
   6. notify_achievement_unlock → Al desbloquear un logro: envía notificación en tiempo real.
   7. notify_new_lesson         → Al crear una lección: notifica a estudiantes del curso.
+  8. on_order_compra_approved  → Al confirmar una Orden de compra: notifica al profesor.
 """
 
 from django.db.models.signals import post_save
@@ -216,69 +217,8 @@ def on_stats_updated(sender, instance, **kwargs):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# 4. Al aprobar una Order: activar UserSubscription y crear Payment
+# 4. (ELIMINADO) - El modelo de suscripciones fue reemplazado por venta directa.
 # ──────────────────────────────────────────────────────────────────────────────
-
-@receiver(post_save, sender='learning.Order')
-def on_order_approved(sender, instance, created, **kwargs):
-    """
-    Cuando una Order cambia a status='approved':
-      1. Crea o renueva la UserSubscription del usuario.
-      2. Crea un Payment con status='approved'.
-      3. Envía notificación al usuario por WebSocket + guarda en BD.
-    """
-    if instance.status != 'approved':
-        return
-
-    if not instance.subscription:
-        return
-
-    # Evitar procesar si ya existe un Payment aprobado para esta orden
-    from learning.models import Payment, UserSubscription
-    if Payment.objects.filter(order=instance, status='approved').exists():
-        return
-
-    today        = date.today()
-    plan         = instance.subscription
-    end_date     = today + timedelta(days=plan.duration_days)
-
-    # Crear o renovar la suscripción activa
-    user_sub, sub_created = UserSubscription.objects.update_or_create(
-        user=instance.user,
-        subscription=plan,
-        defaults={
-            'start_date': today,
-            'end_date':   end_date,
-            'is_active':  True,
-        },
-    )
-
-    action_str = 'activada' if sub_created else 'renovada'
-    logger.info('Suscripción %s para %s hasta %s', action_str, instance.user.email, end_date)
-
-    # Registrar Payment
-    payment = Payment.objects.create(
-        user           = instance.user,
-        order          = instance,
-        amount         = instance.total_amount,
-        payment_method = instance.payment_method,
-        status         = 'approved',
-    )
-
-    # Enviar confirmación por correo
-    try:
-        from learning.services.email_service import send_payment_confirmation
-        send_payment_confirmation(instance.user, payment)
-    except Exception as e:
-        logger.warning('Email confirmación de pago falló: %s', e)
-
-    # Notificación en tiempo real
-    push_ws_notification(
-        user_id=instance.user.id,
-        title='✅ Suscripción activada',
-        message=f'Tu plan "{plan.name}" está activo hasta el {end_date.strftime("%d/%m/%Y")}.',
-        notif_type='subscription',
-    )
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -326,3 +266,56 @@ def notify_new_lesson(sender, instance, created, **kwargs):
                               action_url, 'Ver lección')
         except Exception as e:
             logger.warning('Email nueva lección falló para %s: %s', student.email, e)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 8. Al pagar una Orden de compra: Enviar notificación / correo al profesor
+# ──────────────────────────────────────────────────────────────────────────────
+
+@receiver(post_save, sender='learning.Orden')
+def on_order_compra_approved(sender, instance, created, **kwargs):
+    """
+    Cuando una Orden de Compra cambia a estado='pagada':
+    Se notifica al profesor responsable para que envíe el enlace del aula.
+    """
+    if instance.estado != 'pagada':
+        return
+
+    from learning.models import Classroom
+    from learning.services.email_service import send_custom_email
+    from django.conf import settings
+
+    for detalle in instance.detalles.all():
+        producto = detalle.producto
+        if producto.curso:
+            # Encontrar el aula / profesor del curso
+            classroom = Classroom.objects.filter(course=producto.curso, is_active=True).first()
+            if classroom:
+                teacher = classroom.teacher
+                # Notificación en tiempo real al profesor
+                push_ws_notification(
+                    user_id=teacher.id,
+                    title=f'🛒 Venta realizada: {producto.titulo}',
+                    message=f'El estudiante {instance.estudiante.email} adquirió el curso. Procede a enviar el enlace del aula.',
+                    notif_type='system',
+                )
+                # Enviar correo electrónico al profesor
+                try:
+                    subject = f'Nueva venta del curso: {producto.titulo}'
+                    message = (
+                        f'Hola Profesor {teacher.nombre or teacher.email},\n\n'
+                        f'El estudiante {instance.estudiante.email} ({instance.estudiante.nombre or "Sin nombre"}) '
+                        f'ha comprado el curso "{producto.titulo}".\n'
+                        f'Por favor, envíale el enlace correspondiente al aula.\n\n'
+                        f'ID de la Orden: #{instance.id}'
+                    )
+                    send_custom_email(
+                        user=teacher,
+                        subject=subject,
+                        message=message,
+                        action_url=f'{settings.FRONTEND_URL}/teacher/dashboard',
+                        action_text='Ir al Dashboard de Profesor'
+                    )
+                except Exception as email_err:
+                    logger.error(f'Error enviando correo al profesor {teacher.email}: {email_err}')
+
