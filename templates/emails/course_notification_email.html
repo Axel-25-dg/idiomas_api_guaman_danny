@@ -9,7 +9,7 @@
 <p>Hay novedades en uno de tus cursos en <strong>JumpUp UTE</strong>. ¡Échale un vistazo!</p>
 
 <div class="info-box info-box-info">
-    <h3 style="margin-top:0;">📖 {{ course.title }}</h3>
+    <h3 style="margin-top:0;">{{ course.title }}</h3>
     <div style="font-size:15px; color:#2d3748; line-height:1.7;">
         {{ message|linebreaks }}
     </div>
@@ -30,7 +30,7 @@
 {% endif %}
 
 <div class="button-container">
-    <a href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}/courses/{{ course.id }}" class="button">▶️ Ir al Curso</a>
+    <a href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}/courses/{{ course.id }}" class="button">▶Ir al Curso</a>
 </div>
 
 <div class="info-box" style="margin-top:20px;">
@@ -44,7 +44,7 @@
 <div class="divider"></div>
 
 <p style="font-size:14px; color:#718096; text-align:center; margin-bottom:0;">
-    Cada lección te acerca más a tu meta. ¡Sigue así! 💪
+    Cada lección te acerca más a tu meta. ¡Sigue así!
 </p>
 
 {% endblock %}
