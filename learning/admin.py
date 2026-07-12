@@ -150,25 +150,69 @@ class EmailLogAdmin(admin.ModelAdmin):
 
 @admin.register(BroadcastEmail)
 class BroadcastEmailAdmin(admin.ModelAdmin):
-    list_display   = ['id', 'subject', 'audience', 'sent_badge', 'sent_count', 'created_at']
-    list_filter    = ['is_sent', 'audience']
-    search_fields  = ['subject']
+    list_display    = ['id', 'subject', 'audience', 'sent_badge', 'sent_count', 'created_at']
+    list_filter     = ['is_sent', 'audience']
+    search_fields   = ['subject']
     readonly_fields = ['is_sent', 'sent_count', 'sent_at', 'created_at', 'updated_at']
-    actions        = ['send_broadcast_action']
+    actions         = ['send_broadcast_action']
+
+    # ── Campos editables en el formulario de creación/edición ────────────────
+    fieldsets = (
+        ('Contenido del correo', {
+            'fields': ('subject', 'message', 'action_url', 'action_text'),
+        }),
+        ('Audiencia', {
+            'fields': ('audience', 'target_course'),
+        }),
+        ('Estado del envío', {
+            'fields': ('is_sent', 'sent_count', 'sent_at', 'created_at', 'updated_at'),
+            'classes': ('collapse',),
+        }),
+    )
 
     def sent_badge(self, obj):
         if obj.is_sent:
-            return format_html('<span style="background:#198754;color:#fff;padding:2px 10px;border-radius:4px;font-size:11px;font-weight:bold">ENVIADO</span>')
-        return format_html('<span style="background:#fd7e14;color:#fff;padding:2px 10px;border-radius:4px;font-size:11px;font-weight:bold">PENDIENTE</span>')
+            return format_html(
+                '<span style="background:#198754;color:#fff;padding:2px 10px;'
+                'border-radius:4px;font-size:11px;font-weight:bold">ENVIADO</span>'
+            )
+        return format_html(
+            '<span style="background:#fd7e14;color:#fff;padding:2px 10px;'
+            'border-radius:4px;font-size:11px;font-weight:bold">PENDIENTE</span>'
+        )
     sent_badge.short_description = 'Estado'
 
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        """Agrega botón 'Enviar ahora' en el formulario de edición."""
+        extra_context = extra_context or {}
+        obj = self.get_object(request, object_id)
+        if obj and not obj.is_sent:
+            extra_context['show_send_button'] = True
+        # Si se presionó el botón "Enviar ahora" desde el change form
+        if '_send_now' in request.POST and obj and not obj.is_sent:
+            try:
+                send_broadcast_email(obj)
+                obj.refresh_from_db()
+                self.message_user(
+                    request,
+                    f'✅ "{obj.subject}" enviado exitosamente a {obj.sent_count} usuarios.',
+                    level=messages.SUCCESS,
+                )
+            except Exception as e:
+                self.message_user(
+                    request,
+                    f'❌ Error al enviar: {e}',
+                    level=messages.ERROR,
+                )
+            return HttpResponseRedirect(request.path)
+        return super().change_view(request, object_id, form_url, extra_context)
+
     def send_broadcast_action(self, request, queryset):
-        """
-        Acción: Enviar correo masivo a todos los usuarios activos.
-        Selecciona uno o varios BroadcastEmail y usa esta acción.
-        """
+        """Acción: Enviar correo masivo desde la lista."""
+        sent, skipped, errors = 0, 0, 0
         for broadcast in queryset:
             if broadcast.is_sent:
+                skipped += 1
                 self.message_user(
                     request,
                     f'"{broadcast.subject}" ya fue enviado anteriormente.',
@@ -177,21 +221,21 @@ class BroadcastEmailAdmin(admin.ModelAdmin):
                 continue
             try:
                 send_broadcast_email(broadcast)
-                # send_broadcast_email ya marca is_sent=True y guarda sent_count
-                # Recargamos para obtener el conteo actualizado
                 broadcast.refresh_from_db()
+                sent += 1
                 self.message_user(
                     request,
-                    f'"{broadcast.subject}" enviado a {broadcast.sent_count} usuarios.',
+                    f'✅ "{broadcast.subject}" → {broadcast.sent_count} correos enviados.',
                     level=messages.SUCCESS,
                 )
             except Exception as e:
+                errors += 1
                 self.message_user(
                     request,
-                    f'Error enviando "{broadcast.subject}": {e}',
+                    f'❌ Error enviando "{broadcast.subject}": {e}',
                     level=messages.ERROR,
                 )
-    send_broadcast_action.short_description = 'Enviar correo masivo a todos los usuarios activos'
+    send_broadcast_action.short_description = '📧 Enviar correo masivo a todos los usuarios activos'
 
 @admin.register(Report)
 class ReportAdmin(admin.ModelAdmin):
