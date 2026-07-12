@@ -150,7 +150,47 @@ class EmailLogAdmin(admin.ModelAdmin):
 
 @admin.register(BroadcastEmail)
 class BroadcastEmailAdmin(admin.ModelAdmin):
-    list_display = ['id', 'subject', 'is_sent']
+    list_display  = ['id', 'subject', 'sent_badge', 'created_at']
+    list_filter   = ['is_sent']
+    search_fields = ['subject']
+    actions       = ['send_broadcast_action']
+
+    def sent_badge(self, obj):
+        if obj.is_sent:
+            return format_html('<span style="background:#198754;color:#fff;padding:2px 10px;border-radius:4px;font-size:11px;font-weight:bold">ENVIADO</span>')
+        return format_html('<span style="background:#fd7e14;color:#fff;padding:2px 10px;border-radius:4px;font-size:11px;font-weight:bold">PENDIENTE</span>')
+    sent_badge.short_description = 'Estado'
+
+    def send_broadcast_action(self, request, queryset):
+        """
+        Acción: Enviar correo masivo a todos los usuarios activos.
+        Selecciona uno o varios BroadcastEmail y usa esta acción.
+        """
+        for broadcast in queryset:
+            if broadcast.is_sent:
+                self.message_user(
+                    request,
+                    f'"{broadcast.subject}" ya fue enviado anteriormente.',
+                    level=messages.WARNING,
+                )
+                continue
+            try:
+                send_broadcast_email(broadcast)
+                # send_broadcast_email ya marca is_sent=True y guarda sent_count
+                # Recargamos para obtener el conteo actualizado
+                broadcast.refresh_from_db()
+                self.message_user(
+                    request,
+                    f'"{broadcast.subject}" enviado a {broadcast.sent_count} usuarios.',
+                    level=messages.SUCCESS,
+                )
+            except Exception as e:
+                self.message_user(
+                    request,
+                    f'Error enviando "{broadcast.subject}": {e}',
+                    level=messages.ERROR,
+                )
+    send_broadcast_action.short_description = 'Enviar correo masivo a todos los usuarios activos'
 
 @admin.register(Report)
 class ReportAdmin(admin.ModelAdmin):
