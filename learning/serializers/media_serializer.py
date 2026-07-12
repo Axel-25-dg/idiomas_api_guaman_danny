@@ -9,7 +9,6 @@ class MediaFileSerializer(serializers.ModelSerializer):
     uploaded_by_email = serializers.EmailField(source='uploaded_by.email', read_only=True)
     file_url          = serializers.SerializerMethodField()
     thumbnail_url     = serializers.SerializerMethodField()
-    percentage        = serializers.FloatField(read_only=True, default=0)
 
     class Meta:
         model  = MediaFile
