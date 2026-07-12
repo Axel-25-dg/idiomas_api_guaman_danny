@@ -1,8 +1,13 @@
 {% extends 'emails/email_base.html' %}
 {% block content %}
+
+<div style="text-align:center; margin-bottom:28px;">
+    <span class="badge">📬 Mensaje de JumpUp UTE</span>
+</div>
+
 <p>Hola <strong>{{ user.username }}</strong>,</p>
 
-<div class="info-box" style="font-size: 16px; line-height: 1.8;">
+<div class="info-box" style="font-size:16px; line-height:1.8; color:#2d3748;">
     {{ message|linebreaks }}
 </div>
 
@@ -13,7 +18,10 @@
 {% endif %}
 
 <div class="divider"></div>
-<p style="font-size: 14px; color: #718096; text-align: center;">
-    Este es un mensaje enviado por el equipo académico de <strong>JumpUp UTE</strong>.
+
+<p style="font-size:13px; color:#718096; text-align:center; margin-bottom:0;">
+    Este mensaje fue enviado por el equipo académico de <strong>JumpUp UTE</strong>.<br>
+    Si tienes alguna duda, responde a este correo.
 </p>
+
 {% endblock %}

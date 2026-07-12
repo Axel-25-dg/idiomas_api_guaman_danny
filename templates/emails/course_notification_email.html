@@ -1,22 +1,50 @@
 {% extends 'emails/email_base.html' %}
 {% block content %}
-<div style="text-align: center; margin-bottom: 25px;">
-    <span class="badge">📚 Nueva actualización</span>
+
+<div style="text-align:center; margin-bottom:28px;">
+    <span class="badge" style="background:linear-gradient(135deg,#0056d2,#1a73e8);">📚 Actualización del curso</span>
 </div>
 
 <p>Hola <strong>{{ user.username }}</strong>,</p>
-<p>Hay novedades en el curso <strong>{{ course.title }}</strong>:</p>
+<p>Hay novedades en uno de tus cursos en <strong>JumpUp UTE</strong>. ¡Échale un vistazo!</p>
 
-<div class="info-box info-box-info" style="text-align: center;">
-    <div style="font-size: 32px; margin-bottom: 10px;">📖</div>
-    {{ message|linebreaks }}
+<div class="info-box info-box-info">
+    <h3 style="margin-top:0;">📖 {{ course.title }}</h3>
+    <div style="font-size:15px; color:#2d3748; line-height:1.7;">
+        {{ message|linebreaks }}
+    </div>
 </div>
+
+{% if course.difficulty_level %}
+<div style="text-align:center; margin:20px 0;">
+    <span style="
+        display:inline-block;
+        background:#ebf8ff;
+        color:#2c5282;
+        padding:4px 16px;
+        border-radius:12px;
+        font-size:13px;
+        font-weight:600;
+    ">Nivel {{ course.difficulty_level }}</span>
+</div>
+{% endif %}
 
 <div class="button-container">
-    <a href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}/courses/{{ course.id }}" class="button">Ir al Curso</a>
+    <a href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}/courses/{{ course.id }}" class="button">▶️ Ir al Curso</a>
 </div>
 
-<p style="font-size: 14px; color: #718096; text-align: center;">
-    Sigue practicando, cada lección te acerca más a tu meta.
+<div class="info-box" style="margin-top:20px;">
+    <ul class="feature-list" style="margin:0; padding:0;">
+        <li>Revisa las lecciones nuevas o actualizadas</li>
+        <li>Completa los ejercicios para ganar XP</li>
+        <li>Mantén tu racha de aprendizaje diaria</li>
+    </ul>
+</div>
+
+<div class="divider"></div>
+
+<p style="font-size:14px; color:#718096; text-align:center; margin-bottom:0;">
+    Cada lección te acerca más a tu meta. ¡Sigue así! 💪
 </p>
+
 {% endblock %}

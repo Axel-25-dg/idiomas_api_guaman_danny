@@ -1,32 +1,37 @@
 {% extends 'emails/email_base.html' %}
 {% block content %}
-<div style="text-align: center; margin-bottom: 25px;">
+
+<div style="text-align:center; margin-bottom:28px;">
     <span class="badge">🎉 Nuevo miembro</span>
 </div>
 
 <p>Hola <strong>{{ user.username }}</strong>,</p>
-<p>¡Bienvenido a <strong>JumpUp UTE</strong>! Estamos emocionados de que te unas a nuestra comunidad de aprendizaje de idiomas.</p>
+<p>¡Bienvenido a <strong>JumpUp UTE</strong>! Estamos felices de que formes parte de nuestra comunidad de aprendizaje de idiomas.</p>
 
 <div class="info-box info-box-success">
-    <h3>🚀 Tu viaje comienza aquí</h3>
-    <p style="margin-bottom: 0;">Nuestra plataforma está diseñada para ayudarte a alcanzar tus metas lingüísticas de forma interactiva, gamificada y efectiva.</p>
+    <h3 style="margin-top:0;">🚀 Tu aventura comienza hoy</h3>
+    <p style="margin-bottom:0;">Aprende a tu ritmo con cursos interactivos, gamificación, Tutor IA y certificados oficiales respaldados por la UTE.</p>
 </div>
 
-<h2>Primeros pasos</h2>
+<h2>¿Por dónde empezar?</h2>
 <ul class="feature-list">
-    <li>Completa tu perfil con una foto y tus idiomas de interés</li>
-    <li>Explora cursos organizados por nivel (A1 — C2)</li>
-    <li>Realiza ejercicios y gana puntos de experiencia (XP)</li>
-    <li>Desbloquea logros y compite en el ranking</li>
-    <li>Practica con nuestro Tutor IA en tiempo real</li>
+    <li>Completa tu perfil y elige los idiomas que deseas aprender</li>
+    <li>Explora cursos por nivel MCER: A1 hasta C2</li>
+    <li>Completa lecciones y acumula puntos de experiencia (XP)</li>
+    <li>Sube de nivel, mantén tu racha diaria y desbloquea logros</li>
+    <li>Practica conversación con el Tutor IA integrado</li>
+    <li>Obtén certificados verificables al completar cada nivel</li>
 </ul>
 
 <div class="button-container">
-    <a href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}/login" class="button">Comenzar a Aprender</a>
+    <a href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}" class="button">🎯 Comenzar a Aprender</a>
 </div>
 
-<p style="font-size: 14px; color: #718096; text-align: center;">
-    ¿Necesitas ayuda? Nuestro equipo de soporte está aquí para ti.<br>
-    ¡Mucho éxito en tu camino hacia el dominio de un nuevo idioma!
-</p>
+<div class="info-box" style="text-align:center; margin-top:28px;">
+    <p style="margin:0; font-size:14px; color:#718096;">
+        ¿Tienes dudas? Escríbenos desde la plataforma o responde este correo.<br>
+        ¡Mucho éxito en tu camino hacia el dominio de un nuevo idioma!
+    </p>
+</div>
+
 {% endblock %}

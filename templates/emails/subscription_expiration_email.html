@@ -1,23 +1,44 @@
 {% extends 'emails/email_base.html' %}
 {% block content %}
-<div style="text-align: center; margin-bottom: 25px;">
-    <span class="badge" style="background: linear-gradient(135deg, #ed8936, #dd6b20);">⏳ Próximo a vencer</span>
+
+<div style="text-align:center; margin-bottom:28px;">
+    <span class="badge" style="background:linear-gradient(135deg,#ed8936,#dd6b20);">⏳ Suscripción por vencer</span>
 </div>
 
 <p>Hola <strong>{{ user.username }}</strong>,</p>
-<p>Queremos recordarte que tu suscripción <strong>{{ subscription.name }}</strong> está próxima a vencer.</p>
+<p>Queremos avisarte que tu suscripción está próxima a expirar. Renueva ahora para seguir disfrutando de todos los beneficios premium.</p>
 
-<div class="info-box info-box-warning" style="text-align: center;">
-    <div style="font-size: 36px; margin-bottom: 10px;">⏰</div>
-    <h3 style="margin: 5px 0;">Vence el {{ expiration_date }}</h3>
-    <p style="margin-bottom: 0;">Renueva a tiempo para no perder el acceso a todos los cursos y herramientas premium.</p>
+<div class="info-box info-box-warning" style="text-align:center;">
+    <div style="font-size:52px; margin-bottom:12px;">⏰</div>
+    <h3 style="margin:0 0 6px 0;">{{ subscription.name }}</h3>
+    <p style="margin:0; font-size:16px; color:#c05621;">
+        Vence el <strong>{{ expiration_date }}</strong>
+    </p>
+</div>
+
+<div class="info-box" style="margin-top:20px;">
+    <h3 style="margin-top:0;">¿Qué pierdes si no renuevas?</h3>
+    <ul class="feature-list" style="margin:0; padding:0;">
+        <li>Acceso al Tutor IA en tiempo real</li>
+        <li>Cursos premium y contenido exclusivo</li>
+        <li>Emisión de certificados de nivel</li>
+        <li>Idiomas ilimitados según tu plan</li>
+        <li>Estadísticas avanzadas y seguimiento de progreso</li>
+    </ul>
 </div>
 
 <div class="button-container">
-    <a href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}/subscriptions" class="button">Renovar Suscripción</a>
+    <a href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}/subscriptions" class="button">🔄 Renovar Suscripción</a>
 </div>
 
-<p style="font-size: 14px; color: #718096; text-align: center;">
-    ¿Tienes alguna pregunta? Estamos aquí para ayudarte.
+<div style="text-align:center; margin-top:12px;">
+    <a href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}/subscriptions" class="button-secondary">Ver planes disponibles</a>
+</div>
+
+<div class="divider"></div>
+
+<p style="font-size:14px; color:#718096; text-align:center; margin-bottom:0;">
+    ¿Tienes dudas sobre tu suscripción? Responde este correo y te ayudamos.
 </p>
+
 {% endblock %}

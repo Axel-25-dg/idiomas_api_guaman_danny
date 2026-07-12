@@ -1,43 +1,58 @@
 {% extends 'emails/email_base.html' %}
 {% block content %}
-<div style="text-align: center; margin-bottom: 25px;">
+
+<div style="text-align:center; margin-bottom:28px;">
     <span class="badge">✅ Pago confirmado</span>
 </div>
 
 <p>Hola <strong>{{ user.username }}</strong>,</p>
-<p>¡Gracias por tu confianza! Hemos recibido correctamente el pago de tu suscripción en <strong>JumpUp UTE</strong>.</p>
+<p>¡Gracias por tu confianza! Hemos procesado correctamente el pago de tu suscripción en <strong>JumpUp UTE</strong>. Tu acceso premium ya está activo.</p>
 
-<div class="info-box">
-    <h3>📋 Resumen de la transacción</h3>
+<div class="info-box info-box-success">
+    <div style="text-align:center; font-size:44px; margin-bottom:12px;">🎉</div>
+    <h3 style="text-align:center; margin-top:0;">¡Suscripción activa!</h3>
+    <p style="text-align:center; margin-bottom:0;">Ya tienes acceso a todos los cursos, el Tutor IA y las herramientas premium de la plataforma.</p>
+</div>
+
+<div class="info-box" style="margin-top:24px;">
+    <h3 style="margin-top:0;">📋 Resumen de la transacción</h3>
     <table class="receipt-table">
         <tr>
-            <td>Monto</td>
-            <td>${{ payment.amount }}</td>
+            <td>Monto pagado</td>
+            <td><strong style="color:#38a169; font-size:17px;">${{ payment.amount }}</strong></td>
         </tr>
         <tr>
             <td>Método de pago</td>
-            <td>{{ payment.payment_method|default:"-" }}</td>
+            <td>{{ payment.payment_method|default:"—" }}</td>
         </tr>
         <tr>
             <td>Estado</td>
-            <td style="color: #38a169;">{{ payment.status|upper }}</td>
+            <td>
+                <span style="background:#c6f6d5; color:#276749; padding:3px 10px; border-radius:12px; font-size:13px; font-weight:600;">
+                    {{ payment.status|upper }}
+                </span>
+            </td>
         </tr>
         <tr>
-            <td>Fecha</td>
+            <td>Fecha y hora</td>
             <td>{{ payment.transaction_date|date:"d/m/Y H:i" }}</td>
         </tr>
         <tr>
-            <td style="border-bottom: none;">Transacción #</td>
-            <td style="border-bottom: none; font-size: 13px; color: #718096;">{{ payment.id }}</td>
+            <td style="border-bottom:none;">N.° de transacción</td>
+            <td style="border-bottom:none; font-size:13px; color:#718096;">#{{ payment.id }}</td>
         </tr>
     </table>
 </div>
 
-<p>Tu acceso a los contenidos premium ya está activo. Sigue aprendiendo y aprovechando todas las herramientas.</p>
-
 <div class="button-container">
-    <a href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}/dashboard" class="button">Ir a mi Dashboard</a>
+    <a href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}/dashboard" class="button">🚀 Ir a mi Dashboard</a>
 </div>
 
-<p style="font-size: 14px; color: #718096;">¿Tienes dudas sobre tu facturación? Contáctanos y te ayudaremos.</p>
+<div class="divider"></div>
+
+<p style="font-size:14px; color:#718096; text-align:center; margin-bottom:0;">
+    ¿Tienes alguna duda sobre tu facturación o suscripción?<br>
+    Responde a este correo y nuestro equipo te ayudará.
+</p>
+
 {% endblock %}

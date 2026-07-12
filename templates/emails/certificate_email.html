@@ -1,26 +1,66 @@
 {% extends 'emails/email_base.html' %}
 {% block content %}
-<div style="text-align: center; margin-bottom: 25px;">
-    <span class="badge">🏆 Logro alcanzado</span>
+
+<div style="text-align:center; margin-bottom:28px;">
+    <span class="badge" style="background:linear-gradient(135deg,#d4af37,#b8941f);">🏆 Certificado Obtenido</span>
 </div>
 
 <p>Hola <strong>{{ user.username }}</strong>,</p>
-<p>¡Felicidades! Tu dedicación y esfuerzo han dado frutos. Ya tienes disponible tu certificado oficial de <strong>JumpUp UTE</strong>.</p>
+<p>¡Felicitaciones! Tu dedicación y esfuerzo han dado frutos. Has obtenido un certificado oficial de <strong>JumpUp UTE</strong>.</p>
 
-<div class="info-box info-box-success" style="text-align: center;">
-    <div style="font-size: 48px; margin-bottom: 10px;">📜</div>
-    <h2 style="color: #2f855a; margin: 10px 0; font-size: 22px;">{{ certificate.title }}</h2>
-    <div style="display: inline-block; background: linear-gradient(135deg, #48bb78, #38a169); color: #ffffff; padding: 6px 20px; border-radius: 20px; font-weight: 600; margin: 5px 0;">Nivel {{ certificate.level }}</div>
-    <p style="margin-top: 12px; color: #718096;">Emitido el {{ certificate.issued_at|date:"d \d\e F \d\e Y" }}</p>
+<div class="info-box info-box-success" style="text-align:center;">
+    <div style="font-size:56px; margin-bottom:12px;">🎓</div>
+    <h3 style="margin:0 0 6px 0; font-size:22px;">{{ certificate.title }}</h3>
+
+    <div style="margin:12px 0;">
+        <span style="
+            display:inline-block;
+            background:linear-gradient(135deg,#0056d2,#1a73e8);
+            color:#fff;
+            padding:5px 20px;
+            border-radius:20px;
+            font-size:14px;
+            font-weight:700;
+            letter-spacing:1px;
+        ">Nivel {{ certificate.level }}</span>
+    </div>
+
+    <p style="margin:0; color:#718096; font-size:14px;">
+        Emitido el <strong>{{ certificate.issued_at|date:"d \d\e F \d\e Y" }}</strong>
+    </p>
 </div>
 
-<p>Este certificado es el testimonio de tu dominio del idioma. Puedes descargarlo, imprimirlo o compartirlo en tus redes profesionales.</p>
+<!-- Código de verificación -->
+{% if certificate.verification_code %}
+<div class="info-box" style="text-align:center; margin-top:20px;">
+    <h3 style="margin-top:0; color:#2d3748;">🔍 Código de verificación</h3>
+    <p style="margin-bottom:8px; font-size:14px; color:#718096;">
+        Comparte este código para que cualquier persona pueda verificar la autenticidad de tu certificado.
+    </p>
+    <div class="code-display">
+        <span style="font-size:22px; letter-spacing:5px;">{{ certificate.verification_code }}</span>
+    </div>
+</div>
+{% endif %}
 
 <div class="button-container">
-    <a href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}/certificates" class="button">Ver mi Certificado</a>
+    <a href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}/certificates" class="button">🎓 Ver mi Certificado</a>
 </div>
 
-<p style="text-align: center; font-size: 16px; color: #2d3748;">
-    <strong>Sigue adelante, ¡el aprendizaje nunca se detiene!</strong>
+<div class="info-box info-box-info" style="margin-top:20px;">
+    <h3 style="margin-top:0;">¿Qué puedes hacer con tu certificado?</h3>
+    <ul class="feature-list">
+        <li>Compártelo en tu perfil de LinkedIn</li>
+        <li>Descárgalo en formato PDF desde la plataforma</li>
+        <li>Úsalo en tu currículum o portafolio profesional</li>
+        <li>Verifica su autenticidad en nuestro sitio con el código</li>
+    </ul>
+</div>
+
+<div class="divider"></div>
+
+<p style="font-size:14px; color:#718096; text-align:center; margin-bottom:0;">
+    ¡Sigue adelante! El aprendizaje nunca se detiene. 🌟
 </p>
+
 {% endblock %}
