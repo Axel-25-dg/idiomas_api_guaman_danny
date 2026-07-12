@@ -150,10 +150,11 @@ class EmailLogAdmin(admin.ModelAdmin):
 
 @admin.register(BroadcastEmail)
 class BroadcastEmailAdmin(admin.ModelAdmin):
-    list_display  = ['id', 'subject', 'sent_badge', 'created_at']
-    list_filter   = ['is_sent']
-    search_fields = ['subject']
-    actions       = ['send_broadcast_action']
+    list_display   = ['id', 'subject', 'audience', 'sent_badge', 'sent_count', 'created_at']
+    list_filter    = ['is_sent', 'audience']
+    search_fields  = ['subject']
+    readonly_fields = ['is_sent', 'sent_count', 'sent_at', 'created_at', 'updated_at']
+    actions        = ['send_broadcast_action']
 
     def sent_badge(self, obj):
         if obj.is_sent:
