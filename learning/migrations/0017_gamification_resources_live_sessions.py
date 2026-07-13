@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='livesession',
             name='room_id',
-            field=models.CharField(blank=True, db_index=True, help_text='Identificador único para la sala de videollamada', max_length=100, unique=True),
+            field=models.CharField(blank=True, db_index=True, help_text='Identificador único para la sala de videollamada', max_length=100),
         ),
         migrations.AddField(
             model_name='teacherresource',
