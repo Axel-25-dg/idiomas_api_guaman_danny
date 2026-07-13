@@ -6,7 +6,7 @@ from .auth_views import (
 from .course_views import LanguageViewSet, CourseViewSet, ModuleViewSet, LessonViewSet, ExerciseViewSet
 from .progress_views import (
     UserProgressViewSet, UserStatsViewSet, AchievementViewSet,
-    UserAchievementViewSet, RankingViewSet,
+    UserAchievementViewSet, RankingViewSet, GameSubmitResultView,
 )
 # (Suscripciones eliminadas — modelo de venta directa)
 from .user_views import StaffUserViewSet, AdminStudentViewSet

@@ -3,7 +3,7 @@ from .language import Language
 from .course import Course, Module, Lesson, Exercise
 from .progress import UserProgress, UserStats, Achievement, UserAchievement
 #from .subscription import Subscription, UserSubscription, Payment, Order
-from .classroom import Classroom, ClassroomEnrollment
+from .classroom import Classroom, ClassroomEnrollment, ClassroomJoinRequest
 from .certificate import Certificate
 from .resource import TeacherResource
 from .media_file import MediaFile

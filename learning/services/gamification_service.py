@@ -153,6 +153,50 @@ def get_user_level_info(user) -> dict:
     }
 
 
+def calculate_game_xp(score: int, is_win: bool = False) -> int:
+    """Calcula XP ganado por un resultado de juego para Flutter."""
+    if score <= 0:
+        return 0
+
+    xp_gained = int(score)
+    if is_win:
+        xp_gained += 10
+    return max(xp_gained, 0)
+
+
+def process_game_result(user, game_id: str, score: int, is_win: bool = False) -> dict:
+    """Procesa el resultado de un juego y actualiza XP, racha y nivel."""
+    from learning.models import UserActivityLog
+
+    before_stats = get_user_level_info(user)
+    xp_gained = calculate_game_xp(score=score, is_win=is_win)
+
+    if xp_gained > 0:
+        award_xp(user, xp=xp_gained, reason=f'game:{game_id or "game"}')
+
+    streak_result = update_streak(user)
+    after_stats = get_user_level_info(user)
+
+    UserActivityLog.objects.create(user=user)
+
+    leveled_up = after_stats['level'] > before_stats['level']
+    message = (
+        '¡Increíble! Has ganado {xp} XP y tu racha sigue viva.'
+        if xp_gained > 0 else
+        'Tu resultado fue registrado, pero no generó XP adicional.'
+    ).format(xp=xp_gained)
+
+    return {
+        'status': 'success',
+        'xp_gained': xp_gained,
+        'new_total_xp': after_stats['total_xp'],
+        'current_streak': streak_result['current_streak'],
+        'leveled_up': leveled_up,
+        'message': message,
+        'level': after_stats['level'],
+    }
+
+
 def has_active_subscription(user) -> bool:
     """Retorna True para simular suscripción activa bajo modelo de venta directa."""
     return True

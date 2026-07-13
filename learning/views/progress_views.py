@@ -1,6 +1,7 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from django.db.models import Count, Q
@@ -13,8 +14,10 @@ from learning.models import (
 from learning.serializers import (
     UserProgressSerializer, UserStatsSerializer,
     AchievementSerializer, UserAchievementSerializer,
+    GameSubmissionSerializer,
 )
 from learning.pagination import StandardPagination
+from learning.services.gamification_service import process_game_result
 
 
 class UserProgressViewSet(viewsets.ModelViewSet):
@@ -126,6 +129,27 @@ class UserProgressViewSet(viewsets.ModelViewSet):
             })
 
         return Response(result)
+
+
+class GameSubmitResultView(APIView):
+    """
+    POST /api/games/submit-result/
+    Registra el resultado de un juego de Flutter y devuelve el nuevo estado de gamificación.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = GameSubmissionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        result = process_game_result(
+            user=request.user,
+            game_id=serializer.validated_data['game_id'],
+            score=serializer.validated_data['score'],
+            is_win=serializer.validated_data['is_win'],
+        )
+
+        return Response(result, status=status.HTTP_200_OK)
 
 
 class UserStatsViewSet(viewsets.ReadOnlyModelViewSet):

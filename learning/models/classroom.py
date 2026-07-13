@@ -5,6 +5,32 @@ from django.utils import timezone
 from .course import Course
 
 
+class ClassroomJoinRequest(models.Model):
+    STATUS_PENDING = 'pending'
+    STATUS_APPROVED = 'approved'
+    STATUS_REJECTED = 'rejected'
+
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Pendiente'),
+        (STATUS_APPROVED, 'Aprobada'),
+        (STATUS_REJECTED, 'Rechazada'),
+    ]
+
+    classroom = models.ForeignKey('Classroom', on_delete=models.CASCADE, related_name='join_requests')
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='classroom_join_requests')
+    message = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ['classroom', 'student']
+
+    def __str__(self):
+        return f'{self.student.email} -> {self.classroom.name} ({self.status})'
+
+
 def generate_access_code():
     """Genera un código de acceso de 8 caracteres en mayúsculas. Ej: 'A3FX9K2T'"""
     return uuid.uuid4().hex[:8].upper()
@@ -54,6 +80,10 @@ class Classroom(models.Model):
         self.is_active = False
         self.deleted_at = timezone.now()
         self.save(update_fields=['is_active', 'deleted_at'])
+
+    @property
+    def join_code(self):
+        return self.access_code
 
 
 class ClassroomEnrollment(models.Model):

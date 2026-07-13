@@ -12,6 +12,7 @@ class TeacherResourceSerializer(serializers.ModelSerializer):
     resource_type_display = serializers.CharField(
         source='get_resource_type_display', read_only=True
     )
+    file = serializers.FileField(required=False, allow_null=True)
 
     class Meta:
         model  = TeacherResource
@@ -27,7 +28,11 @@ class TeacherResourceSerializer(serializers.ModelSerializer):
             'description',
             'resource_type',
             'resource_type_display',
+            'content_type',
+            'file',
+            'image',
             'file_url',
+            'external_url',
             'is_public',
             'created_at',
             'updated_at',
@@ -48,6 +53,21 @@ class TeacherResourceSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'La lección seleccionada no pertenece al curso indicado.'
             )
+
+        content_type = attrs.get('content_type', getattr(self.instance, 'content_type', 'file'))
+        file = attrs.get('file')
+        external_url = attrs.get('external_url')
+        file_url = attrs.get('file_url')
+
+        if content_type == 'file' and not file and not getattr(self.instance, 'file', None) and not file_url and not getattr(self.instance, 'file_url', None):
+            raise serializers.ValidationError({'file': 'Este recurso tipo archivo requiere un archivo o una URL válida.'})
+
+        if content_type == 'url' and not external_url and not file_url and not getattr(self.instance, 'external_url', None):
+            raise serializers.ValidationError({'external_url': 'Este recurso tipo URL requiere un enlace externo.'})
+
+        if content_type == 'video' and not external_url and not file_url and not getattr(self.instance, 'external_url', None):
+            raise serializers.ValidationError({'external_url': 'Este recurso tipo video requiere una URL válida.'})
+
         return attrs
 
     def create(self, validated_data):
