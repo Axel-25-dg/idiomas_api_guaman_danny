@@ -63,8 +63,8 @@ class ClassroomDetailSerializer(ClassroomSerializer):
         fields = ClassroomSerializer.Meta.fields + ['enrollments']
 
     def get_enrollments(self, obj):
-        active_enrollments = obj.enrollments.filter(is_active=True).select_related('student')
-        return ClassroomEnrollmentSerializer(active_enrollments, many=True).data
+        all_enrollments = obj.enrollments.all().select_related('student')
+        return ClassroomEnrollmentSerializer(all_enrollments, many=True).data
 
 
 class JoinClassroomSerializer(serializers.Serializer):

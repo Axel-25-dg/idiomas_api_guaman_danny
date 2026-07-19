@@ -73,7 +73,7 @@ class LessonSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Lesson
-        fields = ['id', 'module', 'module_title', 'title', 'content_type', 'order', 'xp_reward']
+        fields = ['id', 'module', 'module_title', 'title', 'description', 'content_type', 'order', 'xp_reward']
 
 
 class ExerciseSerializer(serializers.ModelSerializer):

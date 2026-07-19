@@ -62,7 +62,7 @@ class ClassroomViewSet(viewsets.ModelViewSet):
         ).select_related('course').prefetch_related('enrollments')
 
     def get_permissions(self):
-        if self.action in ('join', 'mine'):
+        if self.action in ('join', 'mine', 'retrieve'):
             return [permissions.IsAuthenticated()]
         return [IsTeacherOrAdmin()]
 

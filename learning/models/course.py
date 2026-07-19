@@ -108,6 +108,7 @@ class Lesson(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
     module = models.ForeignKey(Module, on_delete=models.CASCADE, related_name='lessons')
     title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, default='')
     slug = models.SlugField(max_length=220, blank=True)
     content_type = models.CharField(max_length=20, choices=CONTENT_TYPE_CHOICES, default='text', db_index=True)
     order = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
