@@ -139,4 +139,5 @@ class CertificateViewSet(viewsets.ModelViewSet):
             'title':             certificate.title,
             'status':            certificate.status,
             'issued_at':         certificate.issued_at,
+            'certificate_file':  request.build_absolute_uri(certificate.certificate_file.file.url) if (certificate.certificate_file and certificate.certificate_file.file) else None,
         })

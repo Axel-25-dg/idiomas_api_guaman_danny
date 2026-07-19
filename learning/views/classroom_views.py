@@ -46,12 +46,22 @@ class ClassroomViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         role = _get_role(user)
+        try:
+            with open("DEBUG_CLASSROOM.txt", "a") as f:
+                f.write(f"user={user} role={role} action={self.action} pk={self.kwargs.get('pk')}\n")
+        except:
+            pass
         if role == ROLE_STUDENT:
-            # El estudiante ve las clases en las que está inscrito y activas
-            return Classroom.objects.filter(
+            qs = Classroom.objects.filter(
                 enrollments__student=user,
                 enrollments__is_active=True,
             ).select_related('teacher', 'course').prefetch_related('enrollments').distinct()
+            try:
+                with open("DEBUG_CLASSROOM.txt", "a") as f:
+                    f.write(f"student qs matched={qs.count()}\n")
+            except:
+                pass
+            return qs
         if user.is_superuser:
             return Classroom.objects.select_related(
                 'teacher', 'course'

@@ -10,6 +10,15 @@ class CertificateSerializer(serializers.ModelSerializer):
     issued_by_email = serializers.EmailField(source='issued_by.email', read_only=True, default=None)
     level_display  = serializers.CharField(source='get_level_display',  read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    certificate_file = serializers.SerializerMethodField()
+
+    def get_certificate_file(self, obj):
+        if obj.certificate_file and obj.certificate_file.file:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.certificate_file.file.url)
+            return obj.certificate_file.file.url
+        return None
 
     class Meta:
         model  = Certificate
@@ -24,6 +33,7 @@ class CertificateSerializer(serializers.ModelSerializer):
             'title',
             'description',
             'certificate_code',
+            'certificate_file',
             'status',
             'status_display',
             'issued_at',
