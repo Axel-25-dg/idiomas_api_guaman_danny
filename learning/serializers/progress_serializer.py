@@ -2,6 +2,12 @@ from rest_framework import serializers
 from learning.models import UserProgress, UserStats, Achievement, UserAchievement
 
 
+class GameSubmissionSerializer(serializers.Serializer):
+    game_id = serializers.CharField(max_length=100)
+    score = serializers.IntegerField(min_value=0)
+    is_win = serializers.BooleanField(required=False, default=False)
+
+
 class UserProgressSerializer(serializers.ModelSerializer):
     lesson_title    = serializers.CharField(source='lesson.title', read_only=True)
     lesson_xp       = serializers.IntegerField(source='lesson.xp_reward', read_only=True)

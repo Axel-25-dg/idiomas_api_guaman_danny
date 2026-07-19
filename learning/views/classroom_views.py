@@ -4,14 +4,16 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
-from learning.models import Classroom, ClassroomEnrollment
+from learning.models import Classroom, ClassroomEnrollment, ClassroomJoinRequest, Notification
 from learning.serializers import (
     ClassroomSerializer, ClassroomDetailSerializer,
     ClassroomEnrollmentSerializer, JoinClassroomSerializer,
+    ClassroomJoinRequestSerializer,
 )
 from learning.pagination import StandardPagination
 from learning.permissions import IsTeacherOrAdmin, IsTeacher, _get_role
 from learning.models import ROLE_STUDENT
+from learning.services.email_service import send_custom_email
 
 
 class ClassroomViewSet(viewsets.ModelViewSet):
@@ -72,7 +74,7 @@ class ClassroomViewSet(viewsets.ModelViewSet):
         ).select_related('course').prefetch_related('enrollments')
 
     def get_permissions(self):
-        if self.action in ('join', 'mine', 'retrieve'):
+        if self.action in ('join', 'mine', 'retrieve', 'request_join', 'requests', 'approve_request', 'reject_request'):
             return [permissions.IsAuthenticated()]
         return [IsTeacherOrAdmin()]
 
@@ -94,6 +96,96 @@ class ClassroomViewSet(viewsets.ModelViewSet):
             ClassroomSerializer(classroom, context={'request': request}).data,
             status=status.HTTP_200_OK,
         )
+
+    @action(detail=False, methods=['post'], url_path='request-join',
+            permission_classes=[permissions.IsAuthenticated])
+    def request_join(self, request):
+        classroom_id = request.data.get('classroom_id')
+        message = request.data.get('message', '')
+        if not classroom_id:
+            return Response({'detail': 'Se requiere classroom_id.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            classroom = Classroom.objects.get(id=classroom_id, is_active=True)
+        except Classroom.DoesNotExist:
+            return Response({'detail': 'Clase no encontrada.'}, status=status.HTTP_404_NOT_FOUND)
+
+        req, created = ClassroomJoinRequest.objects.get_or_create(
+            classroom=classroom,
+            student=request.user,
+            defaults={'message': message, 'status': ClassroomJoinRequest.STATUS_PENDING},
+        )
+        if not created and req.status == ClassroomJoinRequest.STATUS_APPROVED:
+            return Response({'detail': 'Ya tienes acceso a esta clase.'}, status=status.HTTP_200_OK)
+
+        if created:
+            Notification.objects.create(
+                user=classroom.teacher,
+                title='Nueva solicitud para unirse a tu clase',
+                message=f'{request.user.email} quiere unirse a {classroom.name}.',
+                type='course',
+            )
+            try:
+                send_custom_email(
+                    classroom.teacher,
+                    'Nueva solicitud de ingreso a clase',
+                    f'{request.user.email} quiere unirse a {classroom.name}.',
+                )
+            except Exception:
+                pass
+
+        return Response({'detail': 'Solicitud enviada. Espera la aprobación del profesor.'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'], url_path='requests',
+            permission_classes=[permissions.IsAuthenticated])
+    def requests(self, request, pk=None):
+        classroom = self.get_object()
+        if classroom.teacher_id != request.user.id and not request.user.is_superuser:
+            return Response({'detail': 'No autorizado.'}, status=status.HTTP_403_FORBIDDEN)
+        qs = ClassroomJoinRequest.objects.filter(classroom=classroom).select_related('student')
+        serializer = ClassroomJoinRequestSerializer(qs, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], url_path='approve-request',
+            permission_classes=[permissions.IsAuthenticated])
+    def approve_request(self, request, pk=None):
+        classroom = self.get_object()
+        request_id = request.data.get('request_id')
+        if classroom.teacher_id != request.user.id and not request.user.is_superuser:
+            return Response({'detail': 'No autorizado.'}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            join_request = ClassroomJoinRequest.objects.get(id=request_id, classroom=classroom)
+        except ClassroomJoinRequest.DoesNotExist:
+            return Response({'detail': 'Solicitud no encontrada.'}, status=status.HTTP_404_NOT_FOUND)
+
+        join_request.status = ClassroomJoinRequest.STATUS_APPROVED
+        join_request.save(update_fields=['status', 'updated_at'])
+        ClassroomEnrollment.objects.get_or_create(classroom=classroom, student=join_request.student, defaults={'is_active': True})
+        try:
+            send_custom_email(
+                join_request.student,
+                'Tu solicitud para entrar a la clase fue aprobada',
+                f'Ya puedes entrar a {classroom.name}. Tu código de acceso es {classroom.access_code}.',
+            )
+        except Exception:
+            pass
+        return Response({'detail': 'Solicitud aprobada.'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], url_path='reject-request',
+            permission_classes=[permissions.IsAuthenticated])
+    def reject_request(self, request, pk=None):
+        classroom = self.get_object()
+        request_id = request.data.get('request_id')
+        if classroom.teacher_id != request.user.id and not request.user.is_superuser:
+            return Response({'detail': 'No autorizado.'}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            join_request = ClassroomJoinRequest.objects.get(id=request_id, classroom=classroom)
+        except ClassroomJoinRequest.DoesNotExist:
+            return Response({'detail': 'Solicitud no encontrada.'}, status=status.HTTP_404_NOT_FOUND)
+
+        join_request.status = ClassroomJoinRequest.STATUS_REJECTED
+        join_request.save(update_fields=['status', 'updated_at'])
+        return Response({'detail': 'Solicitud rechazada.'}, status=status.HTTP_200_OK)
 
     # ── Acción: mis clases (para el estudiante) ──────────────────────────────
     @action(detail=False, methods=['get'], url_path='mine',

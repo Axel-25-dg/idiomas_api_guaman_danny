@@ -4,6 +4,7 @@ Módulo de Videotutoría / Sesiones en Vivo
 LiveSession     → sesión de videotutoría creada por un profesor
 LiveParticipant → participante inscrito en una sesión
 """
+import uuid
 from django.db import models
 from django.conf import settings
 from .course import Course
@@ -30,12 +31,18 @@ class LiveSession(models.Model):
     scheduled_at = models.DateTimeField()
     duration_min = models.PositiveIntegerField(default=60, help_text='Duración estimada en minutos')
     meeting_url  = models.URLField(blank=True, help_text='URL de Zoom/Meet/WebRTC')
+    room_id      = models.CharField(max_length=100, blank=True, unique=True, db_index=True, help_text='Identificador único para la sala de videollamada')
     status       = models.CharField(max_length=10, choices=SESSION_STATUS_CHOICES, default='scheduled')
     max_students = models.PositiveIntegerField(default=30)
     created_at   = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-scheduled_at']
+
+    def save(self, *args, **kwargs):
+        if not self.room_id:
+            self.room_id = f'live-{uuid.uuid4().hex[:10]}'
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.title} — {self.get_status_display()}'

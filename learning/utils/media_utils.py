@@ -55,12 +55,13 @@ def _guess_mime_type(filename, extension):
 
 def create_thumbnail(image):
     if Image is None:
-        raise ValidationError('Pillow no está disponible. Imposible crear miniaturas.')
+        raise ValidationError('Pillow no está disponible.')
 
     thumbnail = image.copy()
     thumbnail.thumbnail((300, 300), Image.LANCZOS)
     buffer = io.BytesIO()
-    thumbnail.save(buffer, format='WEBP', quality=70, method=6)
+    # Aumentamos calidad a 95 para miniaturas nítidas
+    thumbnail.save(buffer, format='WEBP', quality=95, method=6) 
     buffer.seek(0)
     return buffer.read()
 
@@ -83,11 +84,13 @@ def process_image_bytes(raw_bytes, extension):
     if image.mode not in ('RGB', 'RGBA'):
         image = image.convert('RGB')
 
-    max_size = (2048, 2048)
+    # Configuramos el límite a 4K (3840x3840) para mantener alta fidelidad
+    max_size = (3840, 3840) 
     image.thumbnail(max_size, Image.LANCZOS)
 
     output = io.BytesIO()
-    image.save(output, format='WEBP', quality=85, method=6)
+    # Calidad 98 casi sin pérdida visual
+    image.save(output, format='WEBP', quality=98, method=6) 
     output.seek(0)
 
     thumbnail_bytes = create_thumbnail(image)

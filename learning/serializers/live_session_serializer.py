@@ -25,7 +25,7 @@ class LiveSessionSerializer(serializers.ModelSerializer):
                   'title', 'description', 'scheduled_at', 'duration_min',
                   'meeting_url', 'status', 'status_display',
                   'max_students', 'participant_count', 'created_at']
-        read_only_fields = ['teacher', 'created_at']
+        read_only_fields = ['teacher', 'room_id', 'created_at']
 
     def get_participant_count(self, obj):
         return obj.participants.filter(is_active=True).count()

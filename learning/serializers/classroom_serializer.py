@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from learning.models import Classroom, ClassroomEnrollment, User
+from learning.models import Classroom, ClassroomEnrollment, ClassroomJoinRequest, User
 from learning.serializers.user_serializer import UserSerializer
 from learning.serializers.course_serializer import CourseSerializer
 
@@ -65,6 +65,16 @@ class ClassroomDetailSerializer(ClassroomSerializer):
     def get_enrollments(self, obj):
         all_enrollments = obj.enrollments.all().select_related('student')
         return ClassroomEnrollmentSerializer(all_enrollments, many=True).data
+
+
+class ClassroomJoinRequestSerializer(serializers.ModelSerializer):
+    student_email = serializers.EmailField(source='student.email', read_only=True)
+    classroom_name = serializers.CharField(source='classroom.name', read_only=True)
+
+    class Meta:
+        model = ClassroomJoinRequest
+        fields = ['id', 'classroom', 'classroom_name', 'student', 'student_email', 'message', 'status', 'created_at', 'updated_at']
+        read_only_fields = ['student', 'status', 'created_at', 'updated_at']
 
 
 class JoinClassroomSerializer(serializers.Serializer):

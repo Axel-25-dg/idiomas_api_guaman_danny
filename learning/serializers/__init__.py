@@ -19,11 +19,13 @@ from .course_serializer import (
 from .progress_serializer import (
     UserProgressSerializer, UserStatsSerializer,
     AchievementSerializer, UserAchievementSerializer,
+    GameSubmissionSerializer,
 )
 # (Serializadores de suscripciones eliminados — venta directa)
 from .classroom_serializer import (
     ClassroomSerializer, ClassroomDetailSerializer,
     ClassroomEnrollmentSerializer, JoinClassroomSerializer,
+    ClassroomJoinRequestSerializer,
 )
 from .certificate_serializer import (
     CertificateSerializer, CertificateCreateSerializer, CertificateIssueSerializer,

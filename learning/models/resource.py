@@ -13,6 +13,12 @@ RESOURCE_TYPE_CHOICES = [
     ('other',     'Otro'),
 ]
 
+RESOURCE_CONTENT_TYPE_CHOICES = [
+    ('file', 'Archivo'),
+    ('url', 'URL externa'),
+    ('video', 'Video embebido'),
+]
+
 
 class TeacherResource(models.Model):
     """
@@ -55,6 +61,26 @@ class TeacherResource(models.Model):
         max_length=10,
         choices=RESOURCE_TYPE_CHOICES,
         default='pdf',
+    )
+    content_type = models.CharField(
+        max_length=10,
+        choices=RESOURCE_CONTENT_TYPE_CHOICES,
+        default='file',
+        help_text='Tipo de contenido para que Flutter sepa cómo abrirlo.',
+    )
+    file = models.FileField(
+        upload_to='teacher_resources/%Y/%m/%d/',
+        null=True,
+        blank=True,
+        max_length=500,
+        help_text='Archivo subido directamente por el profesor.',
+    )
+    image = models.ImageField(
+        upload_to='teacher_resources/images/%Y/%m/%d/',
+        null=True,
+        blank=True,
+        max_length=500,
+        help_text='Imagen subida directamente por el profesor.',
     )
     media_file = models.ForeignKey(
         'MediaFile',

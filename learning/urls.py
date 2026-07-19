@@ -7,7 +7,7 @@ from learning.views import (
     RegisterBiometricView, LoginBiometricView,
     LanguageViewSet, CourseViewSet, ModuleViewSet, LessonViewSet, ExerciseViewSet,
     UserProgressViewSet, UserStatsViewSet, AchievementViewSet, UserAchievementViewSet,
-    RankingViewSet,
+    RankingViewSet, GameSubmitResultView,
     # (Suscripciones eliminadas)
     StaffUserViewSet, AdminStudentViewSet,
     ClassroomViewSet, CertificateViewSet, TeacherResourceViewSet,
@@ -114,6 +114,9 @@ urlpatterns = [
     # ── Password Reset ───────────────────────────────────────────────────────
     path('auth/password-reset/', PasswordResetRequestView.as_view(), name='password_reset'),
     path('auth/password-reset-confirm/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+
+    # ── Gamificación para juegos Flutter ────────────────────────────────────
+    path('games/submit-result/', GameSubmitResultView.as_view(), name='game-submit-result'),
 
     # ── Dashboards ───────────────────────────────────────────────────────────
     path('dashboard/student/',  StudentDashboardView.as_view(),  name='dashboard-student'),
