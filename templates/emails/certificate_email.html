@@ -1,64 +1,280 @@
-{% extends 'emails/email_base.html' %}
-{% block content %}
+{% extends 'emails/email_base.html' %} {% block content %}
 
-<div style="text-align:center; margin-bottom:28px;">
-    <span class="badge" style="background:linear-gradient(135deg,#d4af37,#b8941f);">Certificado Obtenido</span>
+<!-- Badge -->
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  style="margin-bottom: 28px"
+>
+  <tr>
+    <td align="center">
+      <span
+        class="badge"
+        style="
+          display: inline-block;
+          padding: 8px 18px;
+          background-color: #fdf6e3;
+          color: #8a6d1f;
+          font-size: 13px;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+          border-radius: 9999px;
+        "
+      >
+        Certificado Obtenido
+      </span>
+    </td>
+  </tr>
+</table>
+
+<!-- Saludo -->
+<p style="margin: 0 0 14px; font-size: 16px; line-height: 1.6; color: #2d3748">
+  Hola <strong>{{ user.username }}</strong>,
+</p>
+<p style="margin: 0 0 28px; font-size: 16px; line-height: 1.6; color: #2d3748">
+  Felicitaciones. Tu dedicación y esfuerzo han dado frutos. Has obtenido un
+  certificado oficial de <strong>JumpUp UTE</strong>.
+</p>
+
+<!-- Caja del certificado -->
+<div
+  class="info-box info-box-success"
+  style="
+    background-color: #fdf6e3;
+    border: 1px solid #f0e2b8;
+    border-radius: 12px;
+    padding: 26px 24px;
+    margin: 0 0 20px;
+    text-align: center;
+  "
+>
+  <h3
+    style="margin: 0 0 14px; font-size: 22px; line-height: 1.3; color: #7b5e12"
+  >
+    {{ certificate.title }}
+  </h3>
+
+  <table
+    role="presentation"
+    cellpadding="0"
+    cellspacing="0"
+    align="center"
+    style="margin: 0 auto 14px"
+  >
+    <tr>
+      <td
+        style="
+          background-color: #0056d2;
+          border-radius: 9999px;
+          padding: 6px 20px;
+        "
+      >
+        <span
+          style="
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1px;
+          "
+        >
+          Nivel {{ certificate.level }}
+        </span>
+      </td>
+    </tr>
+  </table>
+
+  <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #8a7429">
+    Emitido el
+    <strong>{{ certificate.issued_at|date:"d \d\e F \d\e Y" }}</strong>
+  </p>
 </div>
 
-<p>Hola <strong>{{ user.username }}</strong>,</p>
-<p>Felicitaciones. Tu dedicacion y esfuerzo han dado frutos. Has obtenido un certificado oficial de <strong>JumpUp UTE</strong>.</p>
-
-<div class="info-box info-box-success" style="text-align:center;">
-    <h3 style="margin:0 0 6px 0; font-size:22px;">{{ certificate.title }}</h3>
-
-    <div style="margin:12px 0;">
-        <span style="
-            display:inline-block;
-            background:linear-gradient(135deg,#0056d2,#1a73e8);
-            color:#fff;
-            padding:5px 20px;
-            border-radius:20px;
-            font-size:14px;
-            font-weight:700;
-            letter-spacing:1px;
-        ">Nivel {{ certificate.level }}</span>
-    </div>
-
-    <p style="margin:0; color:#718096; font-size:14px;">
-        Emitido el <strong>{{ certificate.issued_at|date:"d \d\e F \d\e Y" }}</strong>
-    </p>
-</div>
-
+<!-- Código de verificación -->
 {% if certificate.verification_code %}
-<div class="info-box" style="text-align:center; margin-top:20px;">
-    <h3 style="margin-top:0; color:#2d3748;">Codigo de verificacion</h3>
-    <p style="margin-bottom:8px; font-size:14px; color:#718096;">
-        Comparte este codigo para que cualquier persona pueda verificar la autenticidad de tu certificado.
-    </p>
-    <div class="code-display">
-        <span style="font-size:22px; letter-spacing:5px;">{{ certificate.verification_code }}</span>
-    </div>
+<div
+  class="info-box"
+  style="
+    background-color: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin: 0 0 28px;
+    text-align: center;
+  "
+>
+  <h3
+    style="margin: 0 0 8px; font-size: 16px; line-height: 1.4; color: #2d3748"
+  >
+    Código de verificación
+  </h3>
+  <p
+    style="margin: 0 0 16px; font-size: 14px; line-height: 1.6; color: #718096"
+  >
+    Comparte este código para que cualquier persona pueda verificar la
+    autenticidad de tu certificado.
+  </p>
+  <div class="code-display" style="text-align: center">
+    <span
+      style="
+        display: inline-block;
+        background-color: #1a202c;
+        color: #ffffff;
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 5px;
+        padding: 14px 28px;
+        border-radius: 12px;
+        font-family: &quot;Courier New&quot;, monospace;
+      "
+    >
+      {{ certificate.verification_code }}
+    </span>
+  </div>
 </div>
 {% endif %}
 
-<div class="button-container">
-    <a href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}/certificates" class="button">Ver mi Certificado</a>
-</div>
+<!-- Botón CTA -->
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  class="button-container"
+  style="margin: 0 0 32px"
+>
+  <tr>
+    <td align="center">
+      <a
+        href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}/certificates"
+        class="button"
+        style="
+          display: inline-block;
+          padding: 15px 40px;
+          background-color: #0056d2;
+          color: #ffffff;
+          font-size: 16px;
+          font-weight: 700;
+          text-decoration: none;
+          border-radius: 8px;
+        "
+      >
+        Ver mi Certificado
+      </a>
+    </td>
+  </tr>
+</table>
 
-<div class="info-box info-box-info" style="margin-top:20px;">
-    <h3 style="margin-top:0;">Que puedes hacer con tu certificado</h3>
-    <ul class="feature-list">
-        <li>Compartelo en tu perfil de LinkedIn</li>
-        <li>Descargalo en formato PDF desde la plataforma</li>
-        <li>Usalo en tu curriculum o portafolio profesional</li>
-        <li>Verifica su autenticidad en nuestro sitio con el codigo</li>
-    </ul>
-</div>
+<!-- Qué puedes hacer -->
+<h2
+  style="
+    margin: 0 0 18px;
+    font-size: 20px;
+    line-height: 1.3;
+    color: #1a202c;
+    font-weight: 700;
+  "
+>
+  Qué puedes hacer con tu certificado
+</h2>
 
-<div class="divider"></div>
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  class="feature-list"
+  style="margin: 0 0 32px"
+>
+  <tr>
+    <td style="padding: 0 0 14px">
+      <table role="presentation" cellpadding="0" cellspacing="0">
+        <tr>
+          <td
+            valign="top"
+            width="28"
+            style="font-size: 16px; color: #d4af37; line-height: 1.6"
+          >
+            &#9733;
+          </td>
+          <td style="font-size: 15px; line-height: 1.6; color: #2d3748">
+            Compártelo en tu perfil de LinkedIn
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 0 0 14px">
+      <table role="presentation" cellpadding="0" cellspacing="0">
+        <tr>
+          <td
+            valign="top"
+            width="28"
+            style="font-size: 16px; color: #d4af37; line-height: 1.6"
+          >
+            &#9733;
+          </td>
+          <td style="font-size: 15px; line-height: 1.6; color: #2d3748">
+            Descárgalo en formato PDF desde la plataforma
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 0 0 14px">
+      <table role="presentation" cellpadding="0" cellspacing="0">
+        <tr>
+          <td
+            valign="top"
+            width="28"
+            style="font-size: 16px; color: #d4af37; line-height: 1.6"
+          >
+            &#9733;
+          </td>
+          <td style="font-size: 15px; line-height: 1.6; color: #2d3748">
+            Úsalo en tu currículum o portafolio profesional
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 0">
+      <table role="presentation" cellpadding="0" cellspacing="0">
+        <tr>
+          <td
+            valign="top"
+            width="28"
+            style="font-size: 16px; color: #d4af37; line-height: 1.6"
+          >
+            &#9733;
+          </td>
+          <td style="font-size: 15px; line-height: 1.6; color: #2d3748">
+            Verifica su autenticidad en nuestro sitio con el código
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
 
-<p style="font-size:14px; color:#718096; text-align:center; margin-bottom:0;">
+<!-- Nota final -->
+<div
+  class="info-box"
+  style="
+    background-color: #f7fafc;
+    border-radius: 8px;
+    padding: 20px 24px;
+    text-align: center;
+  "
+>
+  <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #718096">
     Sigue adelante. El aprendizaje nunca se detiene.
-</p>
+  </p>
+</div>
 
 {% endblock %}

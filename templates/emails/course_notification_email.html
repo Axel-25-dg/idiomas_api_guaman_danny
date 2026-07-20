@@ -1,50 +1,214 @@
-{% extends 'emails/email_base.html' %}
-{% block content %}
+{% extends 'emails/email_base.html' %} {% block content %}
 
-<div style="text-align:center; margin-bottom:28px;">
-    <span class="badge" style="background:linear-gradient(135deg,#0056d2,#1a73e8);">Actualizacion del curso</span>
+<!-- Badge -->
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  style="margin-bottom: 28px"
+>
+  <tr>
+    <td align="center">
+      <span
+        class="badge"
+        style="
+          display: inline-block;
+          padding: 8px 18px;
+          background-color: #ebf4ff;
+          color: #2c5282;
+          font-size: 13px;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+          border-radius: 9999px;
+        "
+      >
+        Actualización del curso
+      </span>
+    </td>
+  </tr>
+</table>
+
+<!-- Saludo -->
+<p style="margin: 0 0 14px; font-size: 16px; line-height: 1.6; color: #2d3748">
+  Hola <strong>{{ user.username }}</strong>,
+</p>
+<p style="margin: 0 0 28px; font-size: 16px; line-height: 1.6; color: #2d3748">
+  Hay novedades en uno de tus cursos en <strong>JumpUp UTE</strong>.
+</p>
+
+<!-- Caja del curso -->
+<div
+  class="info-box info-box-info"
+  style="
+    background-color: #ebf8ff;
+    border-left: 4px solid #3182ce;
+    border-radius: 8px;
+    padding: 22px 26px;
+    margin: 0 0 20px;
+  "
+>
+  <h3
+    style="margin: 0 0 10px; font-size: 18px; line-height: 1.4; color: #2a4365"
+  >
+    {{ course.title }}
+  </h3>
+  <div style="font-size: 15px; line-height: 1.7; color: #2d3748">
+    {{ message|linebreaks }}
+  </div>
 </div>
 
-<p>Hola <strong>{{ user.username }}</strong>,</p>
-<p>Hay novedades en uno de tus cursos en <strong>JumpUp UTE</strong>.</p>
-
-<div class="info-box info-box-info">
-    <h3 style="margin-top:0;">{{ course.title }}</h3>
-    <div style="font-size:15px; color:#2d3748; line-height:1.7;">
-        {{ message|linebreaks }}
-    </div>
-</div>
-
+<!-- Nivel del curso -->
 {% if course.difficulty_level %}
-<div style="text-align:center; margin:20px 0;">
-    <span style="
-        display:inline-block;
-        background:#ebf8ff;
-        color:#2c5282;
-        padding:4px 16px;
-        border-radius:12px;
-        font-size:13px;
-        font-weight:600;
-    ">Nivel {{ course.difficulty_level }}</span>
-</div>
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  style="margin: 0 0 24px"
+>
+  <tr>
+    <td align="center">
+      <span
+        style="
+          display: inline-block;
+          background-color: #ebf8ff;
+          color: #2c5282;
+          padding: 6px 16px;
+          border-radius: 9999px;
+          font-size: 13px;
+          font-weight: 700;
+        "
+      >
+        Nivel {{ course.difficulty_level }}
+      </span>
+    </td>
+  </tr>
+</table>
 {% endif %}
 
-<div class="button-container">
-    <a href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}/courses/{{ course.id }}" class="button">Ir al Curso</a>
+<!-- Botón CTA -->
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  class="button-container"
+  style="margin: 0 0 32px"
+>
+  <tr>
+    <td align="center">
+      <a
+        href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}/courses/{{ course.id }}"
+        class="button"
+        style="
+          display: inline-block;
+          padding: 15px 40px;
+          background-color: #0056d2;
+          color: #ffffff;
+          font-size: 16px;
+          font-weight: 700;
+          text-decoration: none;
+          border-radius: 8px;
+        "
+      >
+        Ir al Curso
+      </a>
+    </td>
+  </tr>
+</table>
+
+<!-- Próximos pasos -->
+<h2
+  style="
+    margin: 0 0 18px;
+    font-size: 20px;
+    line-height: 1.3;
+    color: #1a202c;
+    font-weight: 700;
+  "
+>
+  Tus próximos pasos
+</h2>
+
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  class="feature-list"
+  style="margin: 0 0 32px"
+>
+  <tr>
+    <td style="padding: 0 0 14px">
+      <table role="presentation" cellpadding="0" cellspacing="0">
+        <tr>
+          <td
+            valign="top"
+            width="28"
+            style="font-size: 16px; color: #3182ce; line-height: 1.6"
+          >
+            &#10003;
+          </td>
+          <td style="font-size: 15px; line-height: 1.6; color: #2d3748">
+            Revisa las lecciones nuevas o actualizadas
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 0 0 14px">
+      <table role="presentation" cellpadding="0" cellspacing="0">
+        <tr>
+          <td
+            valign="top"
+            width="28"
+            style="font-size: 16px; color: #3182ce; line-height: 1.6"
+          >
+            &#10003;
+          </td>
+          <td style="font-size: 15px; line-height: 1.6; color: #2d3748">
+            Completa los ejercicios para ganar XP
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 0">
+      <table role="presentation" cellpadding="0" cellspacing="0">
+        <tr>
+          <td
+            valign="top"
+            width="28"
+            style="font-size: 16px; color: #3182ce; line-height: 1.6"
+          >
+            &#10003;
+          </td>
+          <td style="font-size: 15px; line-height: 1.6; color: #2d3748">
+            Mantén tu racha de aprendizaje diaria
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<!-- Nota final -->
+<div
+  class="info-box"
+  style="
+    background-color: #f7fafc;
+    border-radius: 8px;
+    padding: 20px 24px;
+    text-align: center;
+  "
+>
+  <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #718096">
+    Cada lección te acerca más a tu meta. Sigue adelante.
+  </p>
 </div>
-
-<div class="info-box" style="margin-top:20px;">
-    <ul class="feature-list" style="margin:0; padding:0;">
-        <li>Revisa las lecciones nuevas o actualizadas</li>
-        <li>Completa los ejercicios para ganar XP</li>
-        <li>Mantén tu racha de aprendizaje diaria</li>
-    </ul>
-</div>
-
-<div class="divider"></div>
-
-<p style="font-size:14px; color:#718096; text-align:center; margin-bottom:0;">
-    Cada leccion te acerca mas a tu meta. Sigue adelante.
-</p>
 
 {% endblock %}

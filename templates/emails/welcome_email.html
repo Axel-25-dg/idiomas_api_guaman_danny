@@ -1,37 +1,243 @@
-{% extends 'emails/email_base.html' %}
-{% block content %}
+{% extends 'emails/email_base.html' %} {% block content %}
 
-<div style="text-align:center; margin-bottom:28px;">
-    <span class="badge">Nuevo miembro</span>
+<!-- Badge de bienvenida -->
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  style="margin-bottom: 28px"
+>
+  <tr>
+    <td align="center">
+      <span
+        class="badge"
+        style="
+          display: inline-block;
+          padding: 8px 18px;
+          background-color: #e6fffa;
+          color: #047481;
+          font-size: 13px;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+          border-radius: 9999px;
+        "
+      >
+        Nuevo miembro
+      </span>
+    </td>
+  </tr>
+</table>
+
+<!-- Saludo -->
+<p style="margin: 0 0 14px; font-size: 16px; line-height: 1.6; color: #2d3748">
+  Hola <strong>{{ user.username }}</strong>,
+</p>
+<p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #2d3748">
+  Bienvenido a <strong>JumpUp UTE</strong>. Estamos felices de que formes parte
+  de nuestra comunidad de aprendizaje de idiomas.
+</p>
+
+<!-- Caja destacada -->
+<div
+  class="info-box info-box-success"
+  style="
+    background-color: #f0fff4;
+    border-left: 4px solid #38a169;
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 0 0 32px;
+  "
+>
+  <h3
+    style="margin: 0 0 8px; font-size: 18px; line-height: 1.4; color: #22543d"
+  >
+    Tu aventura comienza hoy
+  </h3>
+  <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #2f6b4f">
+    Aprende a tu ritmo con cursos interactivos, gamificación, Tutor IA y
+    certificados oficiales respaldados por la UTE.
+  </p>
 </div>
 
-<p>Hola <strong>{{ user.username }}</strong>,</p>
-<p>Bienvenido a <strong>JumpUp UTE</strong>. Estamos felices de que formes parte de nuestra comunidad de aprendizaje de idiomas.</p>
+<!-- Sección: por dónde empezar -->
+<h2
+  style="
+    margin: 0 0 18px;
+    font-size: 20px;
+    line-height: 1.3;
+    color: #1a202c;
+    font-weight: 700;
+  "
+>
+  Por dónde empezar
+</h2>
 
-<div class="info-box info-box-success">
-    <h3 style="margin-top:0;">Tu aventura comienza hoy</h3>
-    <p style="margin-bottom:0;">Aprende a tu ritmo con cursos interactivos, gamificacion, Tutor IA y certificados oficiales respaldados por la UTE.</p>
-</div>
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  class="feature-list"
+  style="margin: 0 0 32px"
+>
+  <tr>
+    <td style="padding: 0 0 14px">
+      <table role="presentation" cellpadding="0" cellspacing="0">
+        <tr>
+          <td
+            valign="top"
+            width="28"
+            style="font-size: 16px; color: #38a169; line-height: 1.6"
+          >
+            &#10003;
+          </td>
+          <td style="font-size: 15px; line-height: 1.6; color: #2d3748">
+            Completa tu perfil y elige los idiomas que deseas aprender
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 0 0 14px">
+      <table role="presentation" cellpadding="0" cellspacing="0">
+        <tr>
+          <td
+            valign="top"
+            width="28"
+            style="font-size: 16px; color: #38a169; line-height: 1.6"
+          >
+            &#10003;
+          </td>
+          <td style="font-size: 15px; line-height: 1.6; color: #2d3748">
+            Explora cursos por nivel MCER: A1 hasta C2
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 0 0 14px">
+      <table role="presentation" cellpadding="0" cellspacing="0">
+        <tr>
+          <td
+            valign="top"
+            width="28"
+            style="font-size: 16px; color: #38a169; line-height: 1.6"
+          >
+            &#10003;
+          </td>
+          <td style="font-size: 15px; line-height: 1.6; color: #2d3748">
+            Completa lecciones y acumula puntos de experiencia (XP)
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 0 0 14px">
+      <table role="presentation" cellpadding="0" cellspacing="0">
+        <tr>
+          <td
+            valign="top"
+            width="28"
+            style="font-size: 16px; color: #38a169; line-height: 1.6"
+          >
+            &#10003;
+          </td>
+          <td style="font-size: 15px; line-height: 1.6; color: #2d3748">
+            Sube de nivel, mantén tu racha diaria y desbloquea logros
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 0 0 14px">
+      <table role="presentation" cellpadding="0" cellspacing="0">
+        <tr>
+          <td
+            valign="top"
+            width="28"
+            style="font-size: 16px; color: #38a169; line-height: 1.6"
+          >
+            &#10003;
+          </td>
+          <td style="font-size: 15px; line-height: 1.6; color: #2d3748">
+            Practica con el Tutor IA integrado
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 0">
+      <table role="presentation" cellpadding="0" cellspacing="0">
+        <tr>
+          <td
+            valign="top"
+            width="28"
+            style="font-size: 16px; color: #38a169; line-height: 1.6"
+          >
+            &#10003;
+          </td>
+          <td style="font-size: 15px; line-height: 1.6; color: #2d3748">
+            Obtén certificados verificables al completar cada nivel
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
 
-<h2>Por donde empezar</h2>
-<ul class="feature-list">
-    <li>Completa tu perfil y elige los idiomas que deseas aprender</li>
-    <li>Explora cursos por nivel MCER: A1 hasta C2</li>
-    <li>Completa lecciones y acumula puntos de experiencia (XP)</li>
-    <li>Sube de nivel, mantén tu racha diaria y desbloquea logros</li>
-    <li>Practica con el Tutor IA integrado</li>
-    <li>Obtén certificados verificables al completar cada nivel</li>
-</ul>
+<!-- Botón CTA -->
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  class="button-container"
+  style="margin: 0 0 32px"
+>
+  <tr>
+    <td align="center">
+      <a
+        href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}"
+        class="button"
+        style="
+          display: inline-block;
+          padding: 15px 40px;
+          background-color: #38a169;
+          color: #ffffff;
+          font-size: 16px;
+          font-weight: 700;
+          text-decoration: none;
+          border-radius: 8px;
+        "
+      >
+        Comenzar a Aprender
+      </a>
+    </td>
+  </tr>
+</table>
 
-<div class="button-container">
-    <a href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}" class="button">Comenzar a Aprender</a>
-</div>
-
-<div class="info-box" style="text-align:center; margin-top:28px;">
-    <p style="margin:0; font-size:14px; color:#718096;">
-        Tienes alguna duda? Escríbenos desde la plataforma o responde este correo.<br>
-        Mucho éxito en tu camino hacia el dominio de un nuevo idioma.
-    </p>
+<!-- Nota final -->
+<div
+  class="info-box"
+  style="
+    background-color: #f7fafc;
+    border-radius: 8px;
+    padding: 20px 24px;
+    text-align: center;
+  "
+>
+  <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #718096">
+    ¿Tienes alguna duda? Escríbenos desde la plataforma o responde este
+    correo.<br />
+    Mucho éxito en tu camino hacia el dominio de un nuevo idioma.
+  </p>
 </div>
 
 {% endblock %}
