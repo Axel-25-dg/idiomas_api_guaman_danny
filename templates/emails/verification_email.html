@@ -1,134 +1,210 @@
 {% extends 'emails/email_base.html' %} {% block content %}
 
-<!-- Badge -->
+<!-- Cabecera de Metadata / Tipo de Aviso de Verificación -->
 <table
   role="presentation"
   width="100%"
   cellpadding="0"
   cellspacing="0"
-  style="margin-bottom: 28px"
+  style="margin-bottom: 24px"
 >
   <tr>
-    <td align="center">
-      <span
-        class="badge"
-        style="
-          display: inline-block;
-          padding: 8px 18px;
-          background-color: #ebf4ff;
-          color: #2c5282;
-          font-size: 13px;
-          font-weight: 700;
-          letter-spacing: 0.5px;
-          text-transform: uppercase;
-          border-radius: 9999px;
-        "
-      >
-        Verificación de cuenta
-      </span>
+    <td style="border-bottom: 1px solid #e2e8f0; padding-bottom: 16px">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td>
+            <span
+              style="
+                font-size: 11px;
+                font-weight: 700;
+                color: #0369a1;
+                text-transform: uppercase;
+                letter-spacing: 1.2px;
+              "
+            >
+              Verificación de Cuenta
+            </span>
+          </td>
+          <td align="right">
+            <span style="font-size: 11px; color: #94a3b8"> JumpUp UTE </span>
+          </td>
+        </tr>
+      </table>
     </td>
   </tr>
 </table>
 
-<!-- Saludo -->
-<p style="margin: 0 0 14px; font-size: 16px; line-height: 1.6; color: #2d3748">
-  Hola <strong>{{ user.username }}</strong>,
-</p>
-<p style="margin: 0 0 28px; font-size: 16px; line-height: 1.6; color: #2d3748">
-  Gracias por registrarte en <strong>JumpUp UTE</strong>. Solo falta un paso:
-  verifica tu dirección de correo electrónico para activar tu cuenta.
-</p>
-
-<!-- Caja destacada -->
-<div
-  class="info-box info-box-info"
-  style="
-    background-color: #ebf8ff;
-    border-left: 4px solid #3182ce;
-    border-radius: 8px;
-    padding: 20px 24px;
-    margin: 0 0 32px;
-    text-align: center;
-  "
->
-  <h3
-    style="margin: 0 0 8px; font-size: 18px; line-height: 1.4; color: #2a4365"
-  >
-    Confirma tu correo
-  </h3>
-  <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #2c5282">
-    Haz clic en el botón para verificar tu cuenta y acceder a todos los cursos y
-    funcionalidades de la plataforma.
-  </p>
-</div>
-
-<!-- Botón CTA -->
+<!-- Saludo y Contexto -->
 <table
   role="presentation"
   width="100%"
   cellpadding="0"
   cellspacing="0"
-  class="button-container"
-  style="margin: 0 0 32px"
+  style="margin-bottom: 20px"
 >
   <tr>
-    <td align="center">
-      <a
-        href="{{ verification_link }}"
-        class="button"
+    <td>
+      <p
         style="
-          display: inline-block;
-          padding: 15px 40px;
-          background-color: #3182ce;
-          color: #ffffff;
+          margin: 0 0 8px;
+          font-size: 15px;
+          line-height: 1.6;
+          color: #334155;
+        "
+      >
+        Estimado/a <strong>{{ user.username }}</strong>,
+      </p>
+      <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #334155">
+        Gracias por registrarte en <strong>JumpUp UTE</strong>. Solo falta un
+        paso: verifica tu dirección de correo electrónico para activar
+        completamente tu cuenta y acceder a la plataforma.
+      </p>
+    </td>
+  </tr>
+</table>
+
+<!-- Tarjeta de Confirmación -->
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  style="
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    margin-bottom: 24px;
+  "
+>
+  <tr>
+    <td style="padding: 24px; text-align: center">
+      <h3
+        style="
+          margin: 0 0 8px;
           font-size: 16px;
-          font-weight: 700;
-          text-decoration: none;
-          border-radius: 8px;
+          font-weight: 600;
+          color: #0f172a;
+          line-height: 1.4;
         "
       >
-        Verificar mi Correo
-      </a>
+        Confirma tu correo electrónico
+      </h3>
+      <p style="margin: 0; font-size: 14px; color: #475569; line-height: 1.5">
+        Haz clic en el botón inferior para verificar tu cuenta y comenzar a
+        disfrutar de todos los cursos y herramientas exclusivas.
+      </p>
     </td>
   </tr>
 </table>
 
-<!-- Aviso de expiración -->
-<div
-  class="info-box info-box-warning"
+<!-- Botón CTA Principal -->
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  style="margin: 32px 0"
+>
+  <tr>
+    <td align="center">
+      <table role="presentation" cellpadding="0" cellspacing="0">
+        <tr>
+          <td
+            align="center"
+            style="border-radius: 6px; background-color: #0284c7"
+          >
+            <a
+              href="{{ verification_link }}"
+              target="_blank"
+              style="
+                display: inline-block;
+                padding: 14px 32px;
+                font-family:
+                  -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;,
+                  Roboto, Helvetica, Arial, sans-serif;
+                font-size: 15px;
+                font-weight: 600;
+                color: #ffffff;
+                text-decoration: none;
+                border-radius: 6px;
+                border: 1px solid #0284c7;
+              "
+            >
+              Verificar mi Correo
+            </a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<!-- Aviso de Expiración -->
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
   style="
-    background-color: #fffaf0;
-    border-left: 4px solid #dd6b20;
-    border-radius: 8px;
-    padding: 16px 20px;
-    margin: 0 0 28px;
+    background-color: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 6px;
+    margin-bottom: 24px;
   "
 >
-  <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #7b341e">
-    <strong>Este enlace expira en 24 horas.</strong> Si no creaste una cuenta en
-    JumpUp UTE, puedes ignorar este correo de forma segura.
-  </p>
-</div>
+  <tr>
+    <td style="padding: 16px 20px">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td
+            width="24"
+            valign="top"
+            style="color: #d97706; font-weight: 700; font-size: 14px"
+          >
+            ⚠️
+          </td>
+          <td style="font-size: 13px; line-height: 1.6; color: #92400e">
+            <strong>Este enlace expira en 24 horas.</strong> Si no creaste una
+            cuenta en JumpUp UTE, puedes ignorar este correo de forma segura.
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
 
-<!-- Enlace alternativo -->
-<div style="border-top: 1px solid #e2e8f0; padding-top: 20px">
-  <p
-    style="
-      margin: 0;
-      font-size: 13px;
-      line-height: 1.6;
-      color: #718096;
-      text-align: center;
-      word-break: break-all;
-    "
-  >
-    Si el botón no funciona, copia y pega este enlace en tu navegador:<br />
-    <a
-      href="{{ verification_link }}"
-      style="color: #3182ce; text-decoration: underline"
-      >{{ verification_link }}</a
-    >
-  </p>
-</div>
+<!-- Enlace Alternativo (Texto Plano) -->
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  style="border-top: 1px solid #e2e8f0; padding-top: 20px"
+>
+  <tr>
+    <td>
+      <p
+        style="
+          margin: 0;
+          font-size: 12px;
+          line-height: 1.6;
+          color: #64748b;
+          text-align: center;
+          word-break: break-all;
+        "
+      >
+        Si el botón no funciona, copia y pega el siguiente enlace en tu
+        navegador:<br />
+        <a
+          href="{{ verification_link }}"
+          target="_blank"
+          style="color: #0284c7; text-decoration: underline"
+        >
+          {{ verification_link }}
+        </a>
+      </p>
+    </td>
+  </tr>
+</table>
 
 {% endblock %}

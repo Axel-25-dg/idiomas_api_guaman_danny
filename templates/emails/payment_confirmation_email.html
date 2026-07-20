@@ -1,71 +1,279 @@
 {% extends 'emails/email_base.html' %} {% block content %}
 
-<!-- Badge -->
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 28px">
+<!-- Cabecera de Metadata / Tipo de Aviso Financiero -->
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  style="margin-bottom: 24px"
+>
   <tr>
-    <td align="center">
-      <span class="badge" style="display: inline-block; padding: 8px 18px; background-color: #f0fff4; color: #276749; font-size: 13px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; border-radius: 9999px;">
-        Transacción Exitosa
-      </span>
+    <td style="border-bottom: 1px solid #e2e8f0; padding-bottom: 16px">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td>
+            <span
+              style="
+                font-size: 11px;
+                font-weight: 700;
+                color: #15803d;
+                text-transform: uppercase;
+                letter-spacing: 1.2px;
+              "
+            >
+              Transacción Exitosa
+            </span>
+          </td>
+          <td align="right">
+            <span style="font-size: 11px; color: #94a3b8"> JumpUp UTE </span>
+          </td>
+        </tr>
+      </table>
     </td>
   </tr>
 </table>
 
-<!-- Saludo -->
-<p style="margin: 0 0 14px; font-size: 16px; line-height: 1.6; color: #2d3748">
-  Hola <strong>{{ user.username }}</strong>,
-</p>
-<p style="margin: 0 0 28px; font-size: 16px; line-height: 1.6; color: #2d3748">
-  ¡Gracias por tu confianza! Hemos procesado correctamente el pago de tu suscripción en <strong>JumpUp UTE</strong>. Tu acceso premium ya está activo para que sigas aprendiendo sin límites.
-</p>
-
-<!-- Caja de estado -->
-<div class="info-box info-box-success" style="background-color: #f0fff4; border-left: 4px solid #38a169; border-radius: 8px; padding: 20px 24px; margin: 0 0 32px; text-align: center;">
-  <h3 style="margin: 0 0 8px; font-size: 18px; line-height: 1.4; color: #22543d">Suscripción Activa</h3>
-  <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #276749">
-    Ya puedes disfrutar de todos los cursos, el Tutor IA y las herramientas exclusivas de la plataforma.
-  </p>
-</div>
-
-<!-- Resumen de pago -->
-<div class="info-box" style="background-color: #f7fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin: 0 0 32px;">
-  <h3 style="margin: 0 0 16px; font-size: 16px; font-weight: 700; color: #2d3748; text-transform: uppercase; letter-spacing: 1px;">Resumen del Pago</h3>
-  <table class="receipt-table" style="width: 100%; border-collapse: collapse;">
-    <tr>
-      <td style="padding: 12px 0; border-bottom: 1px solid #edf2f7; color: #718096;">Monto total</td>
-      <td style="padding: 12px 0; border-bottom: 1px solid #edf2f7; text-align: right; font-weight: 700; color: #2d3748; font-size: 18px;">${{ payment.amount }}</td>
-    </tr>
-    <tr>
-      <td style="padding: 12px 0; border-bottom: 1px solid #edf2f7; color: #718096;">Método de pago</td>
-      <td style="padding: 12px 0; border-bottom: 1px solid #edf2f7; text-align: right; color: #2d3748;">{{ payment.payment_method|default:"Tarjeta / Transferencia" }}</td>
-    </tr>
-    <tr>
-      <td style="padding: 12px 0; border-bottom: 1px solid #edf2f7; color: #718096;">Fecha</td>
-      <td style="padding: 12px 0; border-bottom: 1px solid #edf2f7; text-align: right; color: #2d3748;">{{ payment.transaction_date|date:"d M, Y H:i" }}</td>
-    </tr>
-    <tr>
-      <td style="padding: 12px 0; color: #718096;">ID Transacción</td>
-      <td style="padding: 12px 0; text-align: right; font-family: monospace; color: #a0aec0; font-size: 13px;">#{{ payment.id }}</td>
-    </tr>
-  </table>
-</div>
-
-<!-- Botón CTA -->
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="button-container" style="margin: 0 0 32px">
+<!-- Saludo y Contexto -->
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  style="margin-bottom: 20px"
+>
   <tr>
-    <td align="center">
-      <a href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}/dashboard" class="button" style="display: inline-block; padding: 15px 40px; background-color: #3182ce; color: #ffffff; font-size: 16px; font-weight: 700; text-decoration: none; border-radius: 8px;">
-        Empezar a Estudiar
-      </a>
+    <td>
+      <p
+        style="
+          margin: 0 0 8px;
+          font-size: 15px;
+          line-height: 1.6;
+          color: #334155;
+        "
+      >
+        Estimado/a <strong>{{ user.username }}</strong>,
+      </p>
+      <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #334155">
+        ¡Gracias por tu confianza! Hemos procesado correctamente el pago de tu
+        suscripción en <strong>JumpUp UTE</strong>. Tu acceso premium ya se
+        encuentra activo para que continúes aprendiendo sin límites.
+      </p>
     </td>
   </tr>
 </table>
 
-<div class="divider" style="border-top: 1px solid #e2e8f0; margin-bottom: 24px;"></div>
+<!-- Tarjeta de Estado (Suscripción Activa) -->
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  style="
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 6px;
+    margin-bottom: 24px;
+  "
+>
+  <tr>
+    <td style="padding: 20px; text-align: center">
+      <h3
+        style="
+          margin: 0 0 6px;
+          font-size: 16px;
+          font-weight: 600;
+          color: #166534;
+          line-height: 1.4;
+        "
+      >
+        Suscripción Premium Activa
+      </h3>
+      <p style="margin: 0; font-size: 13px; color: #15803d; line-height: 1.5">
+        Disfruta de todos los cursos, el tutor de IA y herramientas exclusivas.
+      </p>
+    </td>
+  </tr>
+</table>
 
-<p style="font-size: 14px; color: #718096; text-align: center; margin-bottom: 0;">
-  ¿Tienes alguna pregunta sobre tu facturación?<br />
-  Simplemente responde a este correo y nuestro equipo de soporte te ayudará.
-</p>
+<!-- Tabla / Resumen de Facturación Estilizada -->
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  style="
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    margin-bottom: 24px;
+  "
+>
+  <tr>
+    <td style="padding: 20px 24px">
+      <h4
+        style="
+          margin: 0 0 16px;
+          font-size: 13px;
+          font-weight: 600;
+          color: #0f172a;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        "
+      >
+        Resumen del Pago
+      </h4>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td
+            style="
+              padding: 8px 0;
+              border-bottom: 1px solid #e2e8f0;
+              font-size: 14px;
+              color: #64748b;
+            "
+          >
+            Monto total
+          </td>
+          <td
+            align="right"
+            style="
+              padding: 8px 0;
+              border-bottom: 1px solid #e2e8f0;
+              font-size: 16px;
+              font-weight: 700;
+              color: #0f172a;
+            "
+          >
+            ${{ payment.amount }}
+          </td>
+        </tr>
+        <tr>
+          <td
+            style="
+              padding: 8px 0;
+              border-bottom: 1px solid #e2e8f0;
+              font-size: 14px;
+              color: #64748b;
+            "
+          >
+            Método de pago
+          </td>
+          <td
+            align="right"
+            style="
+              padding: 8px 0;
+              border-bottom: 1px solid #e2e8f0;
+              font-size: 14px;
+              color: #334155;
+            "
+          >
+            {{ payment.payment_method|default:"Tarjeta / Transferencia" }}
+          </td>
+        </tr>
+        <tr>
+          <td
+            style="
+              padding: 8px 0;
+              border-bottom: 1px solid #e2e8f0;
+              font-size: 14px;
+              color: #64748b;
+            "
+          >
+            Fecha y hora
+          </td>
+          <td
+            align="right"
+            style="
+              padding: 8px 0;
+              border-bottom: 1px solid #e2e8f0;
+              font-size: 14px;
+              color: #334155;
+            "
+          >
+            {{ payment.transaction_date|date:"d M, Y H:i" }}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0 0; font-size: 14px; color: #64748b">
+            ID de transacción
+          </td>
+          <td
+            align="right"
+            style="
+              padding: 8px 0 0;
+              font-size: 12px;
+              font-family: &quot;Courier New&quot;, monospace;
+              color: #64748b;
+            "
+          >
+            #{{ payment.id }}
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<!-- Botón CTA Principal -->
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  style="margin: 32px 0"
+>
+  <tr>
+    <td align="center">
+      <table role="presentation" cellpadding="0" cellspacing="0">
+        <tr>
+          <td
+            align="center"
+            style="border-radius: 6px; background-color: #0284c7"
+          >
+            <a
+              href="{{ frontend_url|default:'https://guaman-idiomas-ute.online' }}/dashboard"
+              target="_blank"
+              style="
+                display: inline-block;
+                padding: 14px 32px;
+                font-family:
+                  -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;,
+                  Roboto, Helvetica, Arial, sans-serif;
+                font-size: 15px;
+                font-weight: 600;
+                color: #ffffff;
+                text-decoration: none;
+                border-radius: 6px;
+                border: 1px solid #0284c7;
+              "
+            >
+              Empezar a Estudiar
+            </a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<!-- Nota de Soporte / Facturación -->
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  style="border-top: 1px solid #e2e8f0; padding-top: 20px"
+>
+  <tr>
+    <td align="center">
+      <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #64748b">
+        ¿Tienes alguna pregunta sobre tu facturación o comprobante?<br />
+        Responde directamente a este correo y nuestro equipo de soporte te
+        ayudará con gusto.
+      </p>
+    </td>
+  </tr>
+</table>
 
 {% endblock %}

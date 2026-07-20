@@ -1,56 +1,77 @@
 {% extends 'emails/email_base.html' %} {% block content %}
 
-<!-- Badge -->
+<!-- Cabecera de Notificación o Metadata -->
 <table
   role="presentation"
   width="100%"
   cellpadding="0"
   cellspacing="0"
-  style="margin-bottom: 28px"
+  style="margin-bottom: 24px"
 >
   <tr>
-    <td align="center">
-      <span
-        class="badge"
-        style="
-          display: inline-block;
-          padding: 8px 18px;
-          background-color: #ebf4ff;
-          color: #2c5282;
-          font-size: 13px;
-          font-weight: 700;
-          letter-spacing: 0.5px;
-          text-transform: uppercase;
-          border-radius: 9999px;
-        "
-      >
-        Mensaje de JumpUp UTE
-      </span>
+    <td style="border-bottom: 1px solid #e2e8f0; padding-bottom: 16px">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td>
+            <span
+              style="
+                font-size: 11px;
+                font-weight: 700;
+                color: #64748b;
+                text-transform: uppercase;
+                letter-spacing: 1.2px;
+              "
+            >
+              Comunicado Académico
+            </span>
+          </td>
+          <td align="right">
+            <span style="font-size: 11px; color: #94a3b8"> JumpUp UTE </span>
+          </td>
+        </tr>
+      </table>
     </td>
   </tr>
 </table>
 
 <!-- Saludo -->
-<p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #2d3748">
-  Hola <strong>{{ user.username }}</strong>,
-</p>
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  style="margin-bottom: 20px"
+>
+  <tr>
+    <td>
+      <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #334155">
+        Estimado/a <strong>{{ user.username }}</strong>,
+      </p>
+    </td>
+  </tr>
+</table>
 
-<!-- Contenido del mensaje -->
-<div
-  class="info-box"
+<!-- Contenido del mensaje (Caja de texto limpia) -->
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
   style="
-    background-color: #f7fafc;
-    border-left: 4px solid #0056d2;
-    border-radius: 8px;
-    padding: 22px 26px;
-    margin: 0 0 32px;
-    font-size: 16px;
-    line-height: 1.8;
-    color: #2d3748;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    margin-bottom: 32px;
   "
 >
-  {{ message|linebreaks }}
-</div>
+  <tr>
+    <td
+      style="padding: 24px; font-size: 15px; line-height: 1.7; color: #334155"
+    >
+      {{ message|linebreaks }}
+    </td>
+  </tr>
+</table>
 
 <!-- Botón CTA (opcional) -->
 {% if action_url %}
@@ -59,47 +80,68 @@
   width="100%"
   cellpadding="0"
   cellspacing="0"
-  class="button-container"
-  style="margin: 0 0 32px"
+  style="margin: 32px 0"
 >
   <tr>
     <td align="center">
-      <a
-        href="{{ action_url }}"
-        class="button"
-        style="
-          display: inline-block;
-          padding: 15px 40px;
-          background-color: #0056d2;
-          color: #ffffff;
-          font-size: 16px;
-          font-weight: 700;
-          text-decoration: none;
-          border-radius: 8px;
-        "
-      >
-        {{ action_text|default:"Ver más" }}
-      </a>
+      <table role="presentation" cellpadding="0" cellspacing="0">
+        <tr>
+          <td
+            align="center"
+            style="border-radius: 6px; background-color: #0284c7"
+          >
+            <a
+              href="{{ action_url }}"
+              target="_blank"
+              style="
+                display: inline-block;
+                padding: 14px 32px;
+                font-family:
+                  -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;,
+                  Roboto, Helvetica, Arial, sans-serif;
+                font-size: 15px;
+                font-weight: 600;
+                color: #ffffff;
+                text-decoration: none;
+                border-radius: 6px;
+                border: 1px solid #0284c7;
+              "
+            >
+              {{ action_text|default:"Ver más" }}
+            </a>
+          </td>
+        </tr>
+      </table>
     </td>
   </tr>
 </table>
 {% endif %}
 
-<!-- Nota final -->
-<div style="border-top: 1px solid #e2e8f0; padding-top: 22px">
-  <p
-    style="
-      margin: 0;
-      font-size: 13px;
-      line-height: 1.6;
-      color: #718096;
-      text-align: center;
-    "
-  >
-    Este mensaje fue enviado por el equipo académico de
-    <strong>JumpUp UTE</strong>.<br />
-    Si tienes alguna duda, responde a este correo.
-  </p>
-</div>
+<!-- Nota final / Pie de mensaje -->
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  style="border-top: 1px solid #e2e8f0; padding-top: 20px"
+>
+  <tr>
+    <td>
+      <p
+        style="
+          margin: 0;
+          font-size: 13px;
+          line-height: 1.6;
+          color: #64748b;
+          text-align: center;
+        "
+      >
+        Este mensaje fue enviado por el equipo académico de
+        <strong>JumpUp UTE</strong>.<br />
+        Si tienes alguna duda, puedes responder directamente a este correo.
+      </p>
+    </td>
+  </tr>
+</table>
 
 {% endblock %}
