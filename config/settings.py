@@ -70,18 +70,31 @@ ASGI_APPLICATION  = 'config.asgi.application'
 # ─── Django Channels — Redis Channel Layer ────────────────────────────────────
 REDIS_HOST = config('REDIS_HOST', default='127.0.0.1')
 REDIS_PORT = config('REDIS_PORT', default=6379, cast=int)
+
+# En producción y desarrollo con LiveSessions, Redis es indispensable
 CHANNEL_LAYERS_BACKEND = config(
     'CHANNEL_LAYERS_BACKEND',
-    default='channels.layers.InMemoryChannelLayer' if DEBUG else 'channels_redis.core.RedisChannelLayer',
+    default='channels_redis.core.RedisChannelLayer',
 )
 
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': CHANNEL_LAYERS_BACKEND,
         'CONFIG': {
-            'hosts': [(REDIS_HOST, REDIS_PORT)],
-        } if CHANNEL_LAYERS_BACKEND == 'channels_redis.core.RedisChannelLayer' else {},
+            'hosts': [f'redis://{REDIS_HOST}:{REDIS_PORT}/0'],
+        },
     },
+}
+
+# ─── Redis Cache (Pizarra Central para participantes y tutoría) ───────────────
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': f'redis://{REDIS_HOST}:{REDIS_PORT}/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
 }
 
 DB_NAME = config('DB_NAME', default='')
