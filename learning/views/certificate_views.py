@@ -77,7 +77,7 @@ class CertificateViewSet(viewsets.ModelViewSet):
     def issue(self, request, pk=None):
         """
         PATCH /api/certificates/{id}/issue/
-        Cambia status='pending' → 'issued' y registra issued_at.
+        Cambia status='pending' → 'issued', registra issued_at y genera PDF.
         """
         certificate = self.get_object()
         if certificate.status == 'issued':
@@ -90,6 +90,15 @@ class CertificateViewSet(viewsets.ModelViewSet):
         )
         serializer.is_valid(raise_exception=True)
         certificate = serializer.save(certificate)
+
+        # Generación automática del PDF
+        try:
+            from learning.utils.certificate_generator import generate_certificate_pdf
+            generate_certificate_pdf(certificate)
+        except Exception as e:
+            # Loguear el error pero no detener la respuesta si el PDF falla
+            print(f"Error generando PDF: {e}")
+
         return Response(
             CertificateSerializer(certificate, context={'request': request}).data
         )

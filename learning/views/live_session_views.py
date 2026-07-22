@@ -149,6 +149,15 @@ class LiveSessionViewSet(viewsets.ModelViewSet):
         serializer = LiveParticipantSerializer(qs, many=True)
         return Response(serializer.data)
 
+    # ── Configuración ICE (WebRTC) ───────────────────────────────────────────
+    @action(detail=False, methods=['get'], url_path='ice-servers')
+    def ice_servers(self, request):
+        """GET /api/live-sessions/ice-servers/ — Obtener servidores STUN/TURN"""
+        from django.conf import settings
+        return Response({
+            'iceServers': getattr(settings, 'ICE_SERVERS', [])
+        })
+
     # ── Iniciar sesión (teacher) ─────────────────────────────────────────────
     @action(detail=True, methods=['post'], url_path='start',
             permission_classes=[IsTeacherOrAdmin])
@@ -168,17 +177,57 @@ class LiveSessionViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='end',
             permission_classes=[IsTeacherOrAdmin])
     def end(self, request, pk=None):
-        """POST /api/live-sessions/{id}/end/ — Cambiar status a 'ended'"""
+        """POST /api/live-sessions/{id}/end/ — Cambiar status a 'ended' y otorgar XP"""
         session = self.get_object()
         if session.status != 'live':
             return Response(
                 {'detail': f'No se puede finalizar una sesión con estado "{session.status}".'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        now = timezone.now()
         session.status = 'ended'
         session.save(update_fields=['status'])
-        # Marcar todos los participantes activos como inactivos
-        session.participants.filter(is_active=True).update(
-            is_active=False, left_at=timezone.now()
-        )
-        return Response({'detail': 'Sesión finalizada.', 'status': 'ended'})
+
+        # 1. Marcar todos los participantes activos como inactivos y registrar salida
+        active_participants = session.participants.filter(is_active=True)
+        active_participants.update(is_active=False, left_at=now)
+
+        # 2. Gamificación: Otorgar XP a los que asistieron
+        # Consideramos "asistencia válida" si estuvieron al menos 10 minutos (puedes ajustar esto)
+        from learning.models.progress import UserStats
+        from datetime import timedelta
+
+        all_participants = session.participants.all()
+        awarded_count = 0
+
+        for p in all_participants:
+            if p.joined_at and p.left_at:
+                duration = p.left_at - p.joined_at
+                if duration >= timedelta(minutes=10):
+                    stats, created = UserStats.objects.get_or_create(user=p.student)
+
+                    # Otorgar 50 XP por asistencia a clase en vivo
+                    stats.total_xp += 50
+
+                    # Actualizar racha si es su primera actividad del día
+                    today = timezone.now().date()
+                    if stats.last_activity_date != today:
+                        if stats.last_activity_date == today - timedelta(days=1):
+                            stats.current_streak += 1
+                        else:
+                            stats.current_streak = 1
+                        stats.last_activity_date = today
+
+                    if stats.current_streak > stats.longest_streak:
+                        stats.longest_streak = stats.current_streak
+
+                    stats.save()
+                    awarded_count += 1
+
+        return Response({
+            'detail': 'Sesión finalizada con éxito.',
+            'status': 'ended',
+            'participants_processed': all_participants.count(),
+            'xp_awarded_to': awarded_count
+        })

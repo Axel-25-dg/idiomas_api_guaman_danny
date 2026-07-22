@@ -247,8 +247,17 @@ STRIPE_WEBHOOK_SECRET    = config('STRIPE_WEBHOOK_SECRET', default='')
 # Dominio público del servidor (usado para construir URLs absolutas de media)
 SITE_DOMAIN = config('SITE_DOMAIN', default='https://guaman-idiomas-ute.online')
 
-# ─── CORS ────────────────────────────────────────────────────────────────────
-CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=True, cast=bool)
+# ─── WebRTC / ICE Servers (STUN/TURN) ─────────────────────────────────────────
+# En producción, se recomienda usar un servicio como Twilio o Coturn.
+# Para desarrollo/pruebas, STUN de Google es suficiente.
+ICE_SERVERS = config(
+    'ICE_SERVERS',
+    default=[
+        {'urls': 'stun:stun.l.google.com:19302'},
+        {'urls': 'stun:stun1.l.google.com:19302'},
+    ],
+    cast=lambda v: eval(v) if isinstance(v, str) else v
+)
 
 # ─── CSRF — dominios de confianza para el admin de Django ────────────────────
 # Necesario cuando DEBUG=False y se usa HTTPS
