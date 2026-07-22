@@ -31,30 +31,40 @@ class LiveSessionConsumer(AsyncWebsocketConsumer):
             await self.close(code=4404)
             return
 
-        # 1. Registrar en la "Pizarra Central" (Redis)
-        await self._add_participant()
+        # Registrar en la "Pizarra Central" (Redis)
+        is_teacher = getattr(self.user.role, 'name', '') == 'teacher' if hasattr(self.user, 'role') else False
+        await self._add_participant(is_teacher)
 
         await self.channel_layer.group_add(self.room_name, self.channel_name)
         await self.accept()
         print(f"--> CONECTADO CON ÉXITO: {self.user.username} unido.")
 
-        # 2. Notificar al resto que llegó alguien (CRÍTICO para Multi-usuario)
+        # Notificar al resto que llegó alguien (CRÍTICO para Multi-usuario)
         await self.channel_layer.group_send(
             self.room_name,
             {
-                'type':     'user_joined',
-                'user_id':  self.user.id,
-                'username': self.user.username,
+                'type':       'user_joined',
+                'user_id':    self.user.id,
+                'username':   self.user.username,
+                'is_teacher': is_teacher,
             },
         )
 
-        # 3. Enviar lista de participantes actuales al que acaba de entrar
-        participants = await self._get_participants()
-        # Filtramos para no enviarnos a nosotros mismos
-        other_users = [uid for uid in participants.keys() if str(uid) != str(self.user.id)]
-
-        print(f"--> Enviando lista de otros participantes: {other_users}\n")
-        await self.send_json({'type': 'participants', 'users': other_users})
+        # Enviar lista de participantes actuales al recién conectado
+        participants_data = await self._get_participants()
+        
+        participants_list = [
+            {
+                'user_id': uid,
+                'username': p_data.get('username', ''),
+                'is_teacher': p_data.get('is_teacher', False)
+            }
+            for uid, p_data in participants_data.items()
+            if str(uid) != str(self.user.id)
+        ]
+        
+        print(f"--> Enviando lista de otros participantes: {[p['user_id'] for p in participants_list]}\n")
+        await self.send_json({'type': 'participants', 'users': participants_list})
 
     async def disconnect(self, close_code):
         if hasattr(self, 'room_name'):
@@ -95,8 +105,11 @@ class LiveSessionConsumer(AsyncWebsocketConsumer):
             # Enviar solo a una persona específica (Peer-to-Peer)
             participants = await self._get_participants()
             target_data = participants.get(str(target_id))
-            if target_data and 'channel' in target_data:
-                await self.channel_layer.send(target_data['channel'], payload)
+            target_channel = target_data.get('channel') if isinstance(target_data, dict) else target_data
+            if target_channel:
+                await self.channel_layer.send(target_channel, payload)
+            else:
+                await self.send_json({'type': 'error', 'detail': 'Destinatario no encontrado en la sala.'})
         else:
             # Si no hay target, enviar a todos (usar con cuidado)
             await self.channel_layer.group_send(self.room_name, payload)
@@ -104,7 +117,12 @@ class LiveSessionConsumer(AsyncWebsocketConsumer):
     # ── Handlers del grupo ───────────────────────────────────────────────────
     async def user_joined(self, event):
         if event['user_id'] != self.user.id:
-            await self.send_json(event)
+            await self.send_json({
+                'type': 'user_joined', 
+                'user_id': event['user_id'], 
+                'username': event['username'],
+                'is_teacher': event.get('is_teacher', False)
+            })
 
     async def user_left(self, event):
         await self.send_json(event)
@@ -123,11 +141,12 @@ class LiveSessionConsumer(AsyncWebsocketConsumer):
 
     # ── Helpers de Cache (Redis) ─────────────────────────────────────────────
     @sync_to_async
-    def _add_participant(self):
+    def _add_participant(self, is_teacher=False):
         participants = cache.get(self.cache_key, {})
         participants[str(self.user.id)] = {
             'channel': self.channel_name,
-            'username': self.user.username
+            'username': self.user.username,
+            'is_teacher': is_teacher
         }
         cache.set(self.cache_key, participants, timeout=7200)
 
