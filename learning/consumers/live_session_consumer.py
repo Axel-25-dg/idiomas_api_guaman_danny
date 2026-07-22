@@ -1,6 +1,6 @@
 """
-LiveSessionConsumer — WebSocket para señalización WebRTC
-=========================================================
+LiveSessionConsumer — WebSocket para señalización WebRTC (Producción con Redis)
+=============================================================================
 ws/live-session/<session_id>/
 
 Flujo WebRTC estándar (señalización via WebSocket):
@@ -10,29 +10,14 @@ Flujo WebRTC estándar (señalización via WebSocket):
   4. A y B intercambian 'ice_candidate' entre sí
   5. Conexión P2P establecida (canal de datos/video/audio)
 
-Eventos del cliente → servidor:
-  { "type": "offer",          "sdp": {...},      "target": <user_id> }
-  { "type": "answer",         "sdp": {...},      "target": <user_id> }
-  { "type": "ice_candidate",  "candidate": {...}, "target": <user_id> }
-  { "type": "leave_room" }
-
-Eventos del servidor → cliente (broadcast o dirigido):
-  { "type": "user_joined",    "user_id": ..., "username": ... }
-  { "type": "user_left",      "user_id": ... }
-  { "type": "offer",          "sdp": {...},   "from": <user_id> }
-  { "type": "answer",         "sdp": {...},   "from": <user_id> }
-  { "type": "ice_candidate",  "candidate": {...}, "from": <user_id> }
-  { "type": "participants",   "users": [...] }
-  { "type": "error",          "detail": "..." }
+Esta versión utiliza la Cache de Django (Redis) para gestionar la lista de participantes
+de forma global entre múltiples workers/servidores.
 """
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-
-# Almacenamiento en memoria de participantes activos por sala
-# { "session_<id>": { user_id: channel_name, ... } }
-_room_participants: dict[str, dict[int, str]] = {}
-
+from django.core.cache import cache
+from asgiref.sync import sync_to_async
 
 class LiveSessionConsumer(AsyncWebsocketConsumer):
 
@@ -40,6 +25,7 @@ class LiveSessionConsumer(AsyncWebsocketConsumer):
         self.user       = self.scope['user']
         self.session_id = self.scope['url_route']['kwargs']['session_id']
         self.room_name  = f'session_{self.session_id}'
+        self.cache_key  = f'live_participants_{self.session_id}'
 
         if not self.user or not self.user.is_authenticated:
             await self.close(code=4001)
@@ -49,10 +35,8 @@ class LiveSessionConsumer(AsyncWebsocketConsumer):
             await self.close(code=4404)
             return
 
-        # Registrar en la sala
-        if self.room_name not in _room_participants:
-            _room_participants[self.room_name] = {}
-        _room_participants[self.room_name][self.user.id] = self.channel_name
+        # 1. Registrar en la "Pizarra Central" (Redis/Cache)
+        await self._add_participant()
 
         await self.channel_layer.group_add(self.room_name, self.channel_name)
         await self.accept()
@@ -68,16 +52,15 @@ class LiveSessionConsumer(AsyncWebsocketConsumer):
         )
 
         # Enviar lista de participantes actuales al recién conectado
-        participants = [
-            {'user_id': uid, 'channel': ch}
-            for uid, ch in _room_participants[self.room_name].items()
-            if uid != self.user.id
-        ]
-        await self.send_json({'type': 'participants', 'users': [p['user_id'] for p in participants]})
+        participants = await self._get_participants()
+        user_ids = [uid for uid in participants.keys() if int(uid) != self.user.id]
+        await self.send_json({'type': 'participants', 'users': user_ids})
 
     async def disconnect(self, close_code):
         if hasattr(self, 'room_name'):
-            _room_participants.get(self.room_name, {}).pop(self.user.id, None)
+            # 2. Eliminar de la "Pizarra Central"
+            await self._remove_participant()
+
             await self.channel_layer.group_discard(self.room_name, self.channel_name)
             await self.channel_layer.group_send(
                 self.room_name,
@@ -112,12 +95,14 @@ class LiveSessionConsumer(AsyncWebsocketConsumer):
             payload['candidate'] = data.get('candidate')
 
         if target_id:
-            # Punto a punto: buscar channel_name del target
-            target_channel = _room_participants.get(self.room_name, {}).get(int(target_id))
-            if target_channel:
-                await self.channel_layer.send(target_channel, {'type': signal_type, **payload})
+            # Punto a punto: buscar channel_name del target en Redis
+            participants = await self._get_participants()
+            target_data = participants.get(str(target_id)) # La cache guarda keys como string
+
+            if target_data and 'channel' in target_data:
+                await self.channel_layer.send(target_data['channel'], {'type': signal_type, **payload})
             else:
-                await self.send_json({'type': 'error', 'detail': 'Destinatario no encontrado en la sala.'})
+                await self.send_json({'type': 'error', 'detail': 'Destinatario no encontrado o desconectado.'})
         else:
             # Broadcast a todos excepto el emisor
             await self.channel_layer.group_send(self.room_name, payload)
@@ -142,7 +127,30 @@ class LiveSessionConsumer(AsyncWebsocketConsumer):
         if event.get('from') != self.user.id:
             await self.send_json({'type': 'ice_candidate', 'candidate': event.get('candidate'), 'from': event.get('from')})
 
-    # ── Helpers ──────────────────────────────────────────────────────────────
+    # ── Helpers de Cache (Redis) ─────────────────────────────────────────────
+    @sync_to_async
+    def _add_participant(self):
+        participants = cache.get(self.cache_key, {})
+        participants[str(self.user.id)] = {
+            'channel': self.channel_name,
+            'username': self.user.username
+        }
+        cache.set(self.cache_key, participants, timeout=7200) # Expira en 2 horas
+
+    @sync_to_async
+    def _remove_participant(self):
+        participants = cache.get(self.cache_key, {})
+        participants.pop(str(self.user.id), None)
+        if not participants:
+            cache.delete(self.cache_key)
+        else:
+            cache.set(self.cache_key, participants, timeout=7200)
+
+    @sync_to_async
+    def _get_participants(self):
+        return cache.get(self.cache_key, {})
+
+    # ── Helpers DB ───────────────────────────────────────────────────────────
     async def send_json(self, content):
         await self.send(text_data=json.dumps(content, default=str))
 
