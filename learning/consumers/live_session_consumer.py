@@ -1,17 +1,6 @@
 """
-LiveSessionConsumer — WebSocket para señalización WebRTC (Producción con Redis)
+LiveSessionConsumer — WebSocket para señalización WebRTC (Multi-usuario + Redis)
 =============================================================================
-ws/live-session/<session_id>/
-
-Flujo WebRTC estándar (señalización via WebSocket):
-  1. Participante A se conecta  → broadcast 'user_joined'
-  2. A envía 'offer'            → se reenvía a B
-  3. B responde 'answer'        → se reenvía a A
-  4. A y B intercambian 'ice_candidate' entre sí
-  5. Conexión P2P establecida (canal de datos/video/audio)
-
-Esta versión utiliza la Cache de Django (Redis) para gestionar la lista de participantes
-de forma global entre múltiples workers/servidores.
 """
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -27,21 +16,29 @@ class LiveSessionConsumer(AsyncWebsocketConsumer):
         self.room_name  = f'session_{self.session_id}'
         self.cache_key  = f'live_participants_{self.session_id}'
 
+        print(f"\n================ [WS INTENTO DE CONEXIÓN] ================")
+        print(f"--> Usuario: {self.user} | ID: {getattr(self.user, 'id', 'None')}")
+        print(f"--> Sesión ID: {self.session_id} | Sala: {self.room_name}")
+
         if not self.user or not self.user.is_authenticated:
+            print("--> RECHAZADO [Error 4001]: Usuario no autenticado.\n")
             await self.close(code=4001)
             return
 
-        if not await self._session_is_available():
+        session_ok = await self._session_is_available()
+        if not session_ok:
+            print("--> RECHAZADO [Error 4404]: La sesión no existe o no está activa.\n")
             await self.close(code=4404)
             return
 
-        # 1. Registrar en la "Pizarra Central" (Redis/Cache)
+        # 1. Registrar en la "Pizarra Central" (Redis)
         await self._add_participant()
 
         await self.channel_layer.group_add(self.room_name, self.channel_name)
         await self.accept()
+        print(f"--> CONECTADO CON ÉXITO: {self.user.username} unido.")
 
-        # Notificar al resto que llegó alguien
+        # 2. Notificar al resto que llegó alguien (CRÍTICO para Multi-usuario)
         await self.channel_layer.group_send(
             self.room_name,
             {
@@ -51,16 +48,18 @@ class LiveSessionConsumer(AsyncWebsocketConsumer):
             },
         )
 
-        # Enviar lista de participantes actuales al recién conectado
+        # 3. Enviar lista de participantes actuales al que acaba de entrar
         participants = await self._get_participants()
-        user_ids = [uid for uid in participants.keys() if int(uid) != self.user.id]
-        await self.send_json({'type': 'participants', 'users': user_ids})
+        # Filtramos para no enviarnos a nosotros mismos
+        other_users = [uid for uid in participants.keys() if str(uid) != str(self.user.id)]
+
+        print(f"--> Enviando lista de otros participantes: {other_users}\n")
+        await self.send_json({'type': 'participants', 'users': other_users})
 
     async def disconnect(self, close_code):
         if hasattr(self, 'room_name'):
-            # 2. Eliminar de la "Pizarra Central"
+            print(f"--> DESCONECTADO: {self.user.username} salió de la sala.")
             await self._remove_participant()
-
             await self.channel_layer.group_discard(self.room_name, self.channel_name)
             await self.channel_layer.group_send(
                 self.room_name,
@@ -72,60 +71,55 @@ class LiveSessionConsumer(AsyncWebsocketConsumer):
             data       = json.loads(text_data)
             event_type = data.get('type')
 
+            # Logs de señales para ver si los Offer/Answer viajan
             if event_type in ('offer', 'answer', 'ice_candidate'):
+                target = data.get('target', 'BROADCAST')
+                print(f"   [SIGNAL] {event_type} de {self.user.id} para {target}")
                 await self._relay_signal(event_type, data)
             elif event_type == 'leave_room':
                 await self.close()
-            else:
-                await self.send_json({'type': 'error', 'detail': f'Tipo desconocido: {event_type}'})
-        except json.JSONDecodeError:
-            await self.send_json({'type': 'error', 'detail': 'JSON inválido.'})
+        except Exception as e:
+            print(f"   [ERROR RECEIVE] {e}")
 
-    # ── Relay de señales WebRTC ──────────────────────────────────────────────
+    # ── Relay de señales WebRTC Targeteadas ──────────────────────────────────
     async def _relay_signal(self, signal_type, data):
-        """Reenvía offer/answer/ice_candidate al target o a todos."""
         target_id = data.get('target')
         payload   = {
             'type': signal_type,
             'from': self.user.id,
+            'sdp':  data.get('sdp'),
+            'candidate': data.get('candidate'),
         }
-        if signal_type in ('offer', 'answer'):
-            payload['sdp'] = data.get('sdp')
-        else:
-            payload['candidate'] = data.get('candidate')
 
         if target_id:
-            # Punto a punto: buscar channel_name del target en Redis
+            # Enviar solo a una persona específica (Peer-to-Peer)
             participants = await self._get_participants()
-            target_data = participants.get(str(target_id)) # La cache guarda keys como string
-
+            target_data = participants.get(str(target_id))
             if target_data and 'channel' in target_data:
-                await self.channel_layer.send(target_data['channel'], {'type': signal_type, **payload})
-            else:
-                await self.send_json({'type': 'error', 'detail': 'Destinatario no encontrado o desconectado.'})
+                await self.channel_layer.send(target_data['channel'], payload)
         else:
-            # Broadcast a todos excepto el emisor
+            # Si no hay target, enviar a todos (usar con cuidado)
             await self.channel_layer.group_send(self.room_name, payload)
 
     # ── Handlers del grupo ───────────────────────────────────────────────────
     async def user_joined(self, event):
         if event['user_id'] != self.user.id:
-            await self.send_json({'type': 'user_joined', 'user_id': event['user_id'], 'username': event['username']})
+            await self.send_json(event)
 
     async def user_left(self, event):
-        await self.send_json({'type': 'user_left', 'user_id': event['user_id']})
+        await self.send_json(event)
 
     async def offer(self, event):
         if event.get('from') != self.user.id:
-            await self.send_json({'type': 'offer', 'sdp': event.get('sdp'), 'from': event.get('from')})
+            await self.send_json(event)
 
     async def answer(self, event):
         if event.get('from') != self.user.id:
-            await self.send_json({'type': 'answer', 'sdp': event.get('sdp'), 'from': event.get('from')})
+            await self.send_json(event)
 
     async def ice_candidate(self, event):
         if event.get('from') != self.user.id:
-            await self.send_json({'type': 'ice_candidate', 'candidate': event.get('candidate'), 'from': event.get('from')})
+            await self.send_json(event)
 
     # ── Helpers de Cache (Redis) ─────────────────────────────────────────────
     @sync_to_async
@@ -135,7 +129,7 @@ class LiveSessionConsumer(AsyncWebsocketConsumer):
             'channel': self.channel_name,
             'username': self.user.username
         }
-        cache.set(self.cache_key, participants, timeout=7200) # Expira en 2 horas
+        cache.set(self.cache_key, participants, timeout=7200)
 
     @sync_to_async
     def _remove_participant(self):
@@ -150,7 +144,6 @@ class LiveSessionConsumer(AsyncWebsocketConsumer):
     def _get_participants(self):
         return cache.get(self.cache_key, {})
 
-    # ── Helpers DB ───────────────────────────────────────────────────────────
     async def send_json(self, content):
         await self.send(text_data=json.dumps(content, default=str))
 
