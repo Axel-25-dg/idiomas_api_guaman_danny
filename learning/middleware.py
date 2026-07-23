@@ -11,7 +11,6 @@ Uso:
 from urllib.parse import parse_qs
 from channels.middleware import BaseMiddleware
 from channels.db import database_sync_to_async
-from django.contrib.auth.models import AnonymousUser
 
 
 @database_sync_to_async
@@ -26,6 +25,7 @@ def get_user_from_token(token_key: str):
         user  = User.objects.get(pk=token['user_id'])
         return user
     except Exception:
+        from django.contrib.auth.models import AnonymousUser
         return AnonymousUser()
 
 
@@ -53,6 +53,7 @@ class JwtAuthMiddleware(BaseMiddleware):
         if token_key:
             scope['user'] = await get_user_from_token(token_key)
         else:
+            from django.contrib.auth.models import AnonymousUser
             scope['user'] = AnonymousUser()
 
         return await super().__call__(scope, receive, send)
