@@ -203,7 +203,8 @@ class LiveSessionConsumer(AsyncWebsocketConsumer):
 
     async def chat_message(self, event):
         """Entrega el mensaje de chat a este cliente."""
-        await self.send_json(event)
+        if event.get('user_id') != self.user.id:
+            await self.send_json(event)
 
     async def end_session(self, event):
         """Notifica a todos que la sesión fue finalizada."""
